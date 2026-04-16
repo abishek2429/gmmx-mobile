@@ -1,347 +1,763 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/theme_provider.dart';
 import '../../../core/ui/app_theme.dart';
 import '../../../core/ui/components.dart';
 import '../../attendance/qr_attendance_page.dart';
 import '../../plans/presentation/plan_list_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage>
+    with SingleTickerProviderStateMixin {
+  late ScrollController _scrollController;
+  late AnimationController _fabController;
+  double _scrollOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _fabController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _scrollController.addListener(() {
+      setState(() => _scrollOffset = _scrollController.offset);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _fabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = ref.watch(themeProvider);
+
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.darkBackground),
-        child: SafeArea(
-          child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(
-                Spacing.lg, Spacing.md, Spacing.lg, 112),
+                Spacing.lg, Spacing.sm, Spacing.lg, 120),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTopBar(context),
-                const SizedBox(height: Spacing.lg),
-                _buildHero(),
-                const SizedBox(height: Spacing.lg),
-                _buildPrimaryActions(context),
-                const SizedBox(height: Spacing.md),
-                _buildStatGrid(),
+                _buildAnimatedTopBar(context, isDark),
                 const SizedBox(height: Spacing.xl),
-                const SectionHeader(title: 'Recent Sessions', action: null),
-                const SizedBox(height: Spacing.sm),
-                const _SessionRow(
-                    title: 'Leg Day',
-                    subtitle: 'Yesterday • 52 mins',
-                    badge: 'DONE'),
-                const SizedBox(height: Spacing.sm),
-                const _SessionRow(
-                    title: 'Push Workout',
-                    subtitle: '2 days ago • 48 mins',
-                    badge: 'DONE'),
+                _buildHeroCard(isDark),
+                const SizedBox(height: Spacing.xl),
+                _buildPrimaryActions(context, isDark),
+                const SizedBox(height: Spacing.xl),
+                _buildStatGrid(isDark),
+                const SizedBox(height: Spacing.xl),
+                _buildRecentSessions(isDark),
+                const SizedBox(height: Spacing.xl),
+                _buildLeaderboardCard(isDark),
+                const SizedBox(height: Spacing.xl),
+                _buildPremiumCard(context, isDark),
                 const SizedBox(height: Spacing.lg),
-                const SectionHeader(title: 'Leaderboard', action: 'VIEW ALL'),
-                const SizedBox(height: Spacing.sm),
-                _buildLeaderboard(),
-                const SizedBox(height: Spacing.lg),
-                AppTile(
-                  icon: Icons.payments_outlined,
-                  title: 'Plan & Payments',
-                  subtitle: 'Premium Plus • Renewal in 14 days',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PlanListPage()),
-                    );
-                  },
-                )
               ],
             ),
           ),
+          Positioned(
+            right: Spacing.lg,
+            bottom: 120,
+            child: _buildFloatingMenu(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Animated top bar with parallax effect
+  Widget _buildAnimatedTopBar(BuildContext context, bool isDark) {
+    final parallaxOffset = _scrollOffset * 0.5;
+
+    return Transform.translate(
+      offset: Offset(0, parallaxOffset),
+      child: Opacity(
+        opacity: 1 - (_scrollOffset / 300).clamp(0, 1),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'GMMX',
+                  style: TextStyle(
+                    color: AppTheme.accent,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  'Welcome back, Arjun',
+                  style: TextStyle(
+                    color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No new notifications')),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(Spacing.sm),
+                    decoration: AppTheme.glassButton(isDark: isDark),
+                    child: Icon(Icons.notifications_rounded,
+                        size: 18,
+                        color:
+                            isDark ? AppTheme.textMuted : AppTheme.lightMuted),
+                  ),
+                ),
+                const SizedBox(width: Spacing.md),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppTheme.accent, AppTheme.accentSoft],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.accent.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'A',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  /// Hero card with today's status
+  Widget _buildHeroCard(bool isDark) {
+    return AnimatedBuilder(
+      animation: Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(parent: _fabController, curve: Curves.easeOut),
+      ),
+      builder: (context, child) {
+        return GlassCard(
+          isDark: isDark,
+          radius: 20,
+          padding: const EdgeInsets.all(Spacing.lg),
+          onTap: null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today\'s Status',
+                        style: TextStyle(
+                          color:
+                              isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                      const Text(
+                        'No session logged yet',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md,
+                      vertical: Spacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.accent.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.local_fire_department_rounded,
+                            size: 14, color: AppTheme.accent),
+                        SizedBox(width: Spacing.xs),
+                        Text(
+                          'STREAK 12',
+                          style: TextStyle(
+                            color: AppTheme.accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.lg),
+              Text(
+                'Start your workout to continue your 12-day streak. You\'re on fire! 🔥',
+                style: TextStyle(
+                  color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Primary action buttons with glass effect
+  Widget _buildPrimaryActions(BuildContext context, bool isDark) {
     return Row(
       children: [
-        const Text(
-          'GMMX',
-          style: TextStyle(
-            color: AppTheme.accent,
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
+        Expanded(
+          child: GlassButton(
+            label: 'Check In',
+            icon: Icons.qr_code_2_rounded,
+            isDark: isDark,
+            onPressed: () {
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const QrAttendancePage(),
+                  transitionsBuilder: (_, animation, __, child) =>
+                      SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: child,
+                  ),
+                ),
+              );
+            },
           ),
         ),
-        const Spacer(),
-        IconPill(
-          icon: Icons.notifications_none_rounded,
-          onTap: () {
+        const SizedBox(width: Spacing.md),
+        Expanded(
+          child: GlassButton(
+            label: 'Attendance',
+            icon: Icons.history_rounded,
+            isDark: isDark,
+            onPressed: () {
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const QrAttendancePage(),
+                  transitionsBuilder: (_, animation, __, child) =>
+                      SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Animated metric cards grid
+  Widget _buildStatGrid(bool isDark) {
+    final metrics = [
+      ('STREAK', '12', 'days', const Color(0xFFFF8D2F)),
+      ('PR DEADLIFT', '225 KG', 'personal best', AppTheme.accent),
+      ('THIS WEEK', '4', 'workouts', const Color(0xFF10B981)),
+      ('AVG DURATION', '49m', 'per session', AppTheme.accentSoft),
+    ];
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: AnimatedMetricCard(
+                label: metrics[0].$1,
+                value: metrics[0].$2,
+                unit: metrics[0].$3,
+                valueColor: metrics[0].$4,
+                delayMs: 100,
+              ),
+            ),
+            const SizedBox(width: Spacing.md),
+            Expanded(
+              child: AnimatedMetricCard(
+                label: metrics[1].$1,
+                value: metrics[1].$2,
+                unit: metrics[1].$3,
+                valueColor: metrics[1].$4,
+                delayMs: 150,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: AnimatedMetricCard(
+                label: metrics[2].$1,
+                value: metrics[2].$2,
+                unit: metrics[2].$3,
+                valueColor: metrics[2].$4,
+                delayMs: 200,
+              ),
+            ),
+            const SizedBox(width: Spacing.md),
+            Expanded(
+              child: AnimatedMetricCard(
+                label: metrics[3].$1,
+                value: metrics[3].$2,
+                unit: metrics[3].$3,
+                valueColor: metrics[3].$4,
+                delayMs: 250,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Recent sessions with swipe gesture
+  Widget _buildRecentSessions(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Recent Sessions',
+          action: 'VIEW ALL',
+          onActionTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No new notifications.')),
+              const SnackBar(content: Text('Opening all sessions...')),
             );
           },
         ),
-        const SizedBox(width: Spacing.sm),
-        const CircleAvatar(
-          radius: 14,
-          backgroundColor: AppTheme.surfaceSoft,
-          child: Text('A',
-              style: TextStyle(fontSize: 11, color: AppTheme.textPrimary)),
-        )
+        const SizedBox(height: Spacing.md),
+        _buildSwipeableSessionRow(
+          isDark,
+          'Leg Day',
+          'Yesterday • 52 mins',
+          '💪',
+          Colors.blue,
+        ),
+        const SizedBox(height: Spacing.sm),
+        _buildSwipeableSessionRow(
+          isDark,
+          'Push Workout',
+          '2 days ago • 48 mins',
+          '🦾',
+          Colors.orange,
+        ),
+        const SizedBox(height: Spacing.sm),
+        _buildSwipeableSessionRow(
+          isDark,
+          'Cardio Session',
+          '3 days ago • 35 mins',
+          '🏃',
+          Colors.green,
+        ),
       ],
     );
   }
 
-  Widget _buildHero() {
-    return AppCard(
-      radius: 10,
-      padding: const EdgeInsets.all(Spacing.md),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Today',
-                  style: TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500),
+  /// Swipeable session row with animation
+  Widget _buildSwipeableSessionRow(
+    bool isDark,
+    String title,
+    String subtitle,
+    String emoji,
+    Color accentColor,
+  ) {
+    return GestureDetector(
+      onLongPress: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Long pressed: $title'),
+            duration: const Duration(milliseconds: 800),
+          ),
+        );
+      },
+      child: GlassCard(
+        isDark: isDark,
+        radius: 12,
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: accentColor.withValues(alpha: 0.3),
                 ),
-                SizedBox(height: Spacing.xs),
-                Text(
-                  'No session logged yet',
-                  style: TextStyle(
+              ),
+              child: Center(
+                child: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ),
+            ),
+            const SizedBox(width: Spacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
                       color: AppTheme.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700),
-                ),
-                SizedBox(height: Spacing.xs),
-                Text(
-                  'Start your workout to continue your streak.',
-                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                ),
-              ],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          AppBadge('STREAK 12'),
-        ],
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Spacing.md,
+                vertical: Spacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                'DONE',
+                style: TextStyle(
+                  color: accentColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPrimaryActions(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: AppTile(
-            icon: Icons.qr_code_rounded,
-            title: 'Check In',
-            subtitle: 'Scan QR and enter gym',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const QrAttendancePage()),
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: Spacing.sm),
-        Expanded(
-          child: AppTile(
-            icon: Icons.history_toggle_off_rounded,
-            title: 'Attendance',
-            subtitle: '22 sessions this month',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const QrAttendancePage()),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatGrid() {
+  /// Leaderboard with animation
+  Widget _buildLeaderboardCard(bool isDark) {
     return Column(
-      children: const [
-        Row(
-          children: [
-            Expanded(
-                child: MetricCard(
-                    label: 'STREAK',
-                    value: '12',
-                    unit: 'days',
-                    valueColor: Color(0xFFFF8D2F))),
-            SizedBox(width: Spacing.sm),
-            Expanded(
-                child: MetricCard(
-                    label: 'PR DEADLIFT',
-                    value: '225 KG',
-                    unit: 'personal best',
-                    valueColor: Color(0xFFFF3E67))),
-          ],
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          title: 'Top Performers',
+          action: 'VIEW ALL',
         ),
-        SizedBox(height: Spacing.sm),
-        Row(
-          children: [
-            Expanded(
-                child: MetricCard(
-                    label: 'THIS WEEK',
-                    value: '4',
-                    unit: 'workouts',
-                    valueColor: Color(0xFF10B981))),
-            SizedBox(width: Spacing.sm),
-            Expanded(
-                child: MetricCard(
-                    label: 'AVG DURATION',
-                    value: '49m',
-                    unit: 'per session',
-                    valueColor: AppTheme.accentSoft)),
-          ],
+        const SizedBox(height: Spacing.md),
+        GlassCard(
+          isDark: isDark,
+          radius: 16,
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _buildLeaderboardEntry(
+                isDark,
+                '🥇',
+                'Marcus T.',
+                '14,200 pts',
+                0,
+                isTop: true,
+              ),
+              const Divider(
+                height: 0.5,
+                thickness: 1,
+              ),
+              _buildLeaderboardEntry(
+                isDark,
+                '🥈',
+                'Sarah M.',
+                '13,450 pts',
+                1,
+              ),
+              const Divider(
+                height: 0.5,
+                thickness: 1,
+              ),
+              _buildLeaderboardEntry(
+                isDark,
+                '👤',
+                'You (Arjun)',
+                '8,450 pts',
+                14,
+                isCurrentUser: true,
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildLeaderboard() {
-    return AppCard(
-      radius: 10,
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: const [
-          _LeaderboardRow(rank: '1', name: 'Marcus T.', score: '14,200 pts'),
-          Divider(
-            height: 0.5,
-            color: Color(0x1A3A4A74),
-            indent: Spacing.md,
-            endIndent: Spacing.md,
-          ),
-          _LeaderboardRow(
-            rank: '14',
-            name: 'You (Arjun)',
-            score: '8,450 pts',
-            isActive: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SessionRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String badge;
-
-  const _SessionRow(
-      {required this.title, required this.subtitle, required this.badge});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      radius: 10,
-      padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md, vertical: Spacing.md),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600)),
-                const SizedBox(height: Spacing.xs),
-                Text(subtitle,
-                    style: const TextStyle(
-                        color: AppTheme.textMuted, fontSize: 11)),
-              ],
-            ),
-          ),
-          AppBadge(badge),
-        ],
-      ),
-    );
-  }
-}
-
-class _LeaderboardRow extends StatelessWidget {
-  final String rank;
-  final String name;
-  final String score;
-  final bool isActive;
-
-  const _LeaderboardRow({
-    required this.rank,
-    required this.name,
-    required this.score,
-    this.isActive = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  /// Single leaderboard entry
+  Widget _buildLeaderboardEntry(
+    bool isDark,
+    String medal,
+    String name,
+    String score,
+    int rank, {
+    bool isTop = false,
+    bool isCurrentUser = false,
+  }) {
     return Container(
-      color: isActive
-          ? AppTheme.accent.withValues(alpha: 0.06)
+      color: isCurrentUser
+          ? AppTheme.accent.withValues(alpha: 0.08)
           : Colors.transparent,
       padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md, vertical: Spacing.md),
+        horizontal: Spacing.md,
+        vertical: Spacing.md,
+      ),
       child: Row(
         children: [
-          SizedBox(
-            width: 24,
-            child: Text(
-              rank,
-              style: const TextStyle(
-                color: AppTheme.textMuted,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
+          Text(
+            medal,
+            style: const TextStyle(fontSize: 18),
           ),
-          const SizedBox(width: Spacing.sm),
-          CircleAvatar(
-            radius: 12,
-            backgroundColor: isActive
-                ? AppTheme.accent.withValues(alpha: 0.2)
-                : AppTheme.surface.withValues(alpha: 0.8),
-            child: Text(
-              name[0],
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: Spacing.sm),
+          const SizedBox(width: Spacing.md),
           Expanded(
-            child: Text(
-              name,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  'Rank #$rank',
+                  style: TextStyle(
+                    color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
           ),
           Text(
             score,
             style: const TextStyle(
               color: AppTheme.accent,
-              fontWeight: FontWeight.w600,
               fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Premium card with CTA
+  Widget _buildPremiumCard(BuildContext context, bool isDark) {
+    return GlassCard(
+      isDark: isDark,
+      radius: 16,
+      padding: const EdgeInsets.all(Spacing.lg),
+      onTap: () {
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const PlanListPage(),
+            transitionsBuilder: (_, animation, __, child) => ScaleTransition(
+              scale: Tween<double>(begin: 0.95, end: 1).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Premium Membership',
+                    style: TextStyle(
+                      color: AppTheme.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    'Unlock exclusive features',
+                    style: TextStyle(
+                      color: isDark ? AppTheme.textPrimary : AppTheme.lightText,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const Icon(
+                Icons.star_rounded,
+                color: AppTheme.accent,
+                size: 28,
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.lg),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const PlanListPage(),
+                  transitionsBuilder: (_, animation, __, child) =>
+                      SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 1),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppTheme.accent, AppTheme.accentSoft],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'Upgrade Now',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Floating action button with menu
+  Widget _buildFloatingMenu(BuildContext context) {
+    return AnimatedFAB(
+      actions: [
+        FABAction(
+          label: 'New Session',
+          icon: Icons.fitness_center_rounded,
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Starting new session...')),
+            );
+          },
+        ),
+        FABAction(
+          label: 'Goal',
+          icon: Icons.flag_rounded,
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Setting goals...')),
+            );
+          },
+        ),
+        FABAction(
+          label: 'Invite',
+          icon: Icons.person_add_rounded,
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Inviting friends...')),
+            );
+          },
+        ),
+      ],
     );
   }
 }
