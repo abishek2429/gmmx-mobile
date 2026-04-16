@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/ui/app_theme.dart';
+import '../../../core/ui/components.dart';
+
 final userProfileProvider = StateProvider<UserProfile>((ref) {
   return UserProfile(
     name: 'Rajesh Kumar',
@@ -15,15 +18,21 @@ final inactivityThresholdProvider = StateProvider<int>((ref) => 15);
 
 class UserProfile {
   final String name, email, phone, role, avatar;
-  UserProfile({required this.name, required this.email, required this.phone, required this.role, required this.avatar});
+  UserProfile(
+      {required this.name,
+      required this.email,
+      required this.phone,
+      required this.role,
+      required this.avatar});
 
-  UserProfile copyWith({String? name, String? email, String? phone}) => UserProfile(
-    name: name ?? this.name,
-    email: email ?? this.email,
-    phone: phone ?? this.phone,
-    role: role,
-    avatar: avatar,
-  );
+  UserProfile copyWith({String? name, String? email, String? phone}) =>
+      UserProfile(
+        name: name ?? this.name,
+        email: email ?? this.email,
+        phone: phone ?? this.phone,
+        role: role,
+        avatar: avatar,
+      );
 }
 
 class ProfileSettingsPage extends ConsumerWidget {
@@ -37,12 +46,9 @@ class ProfileSettingsPage extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [const Color(0xFF0f172a), const Color(0xFF1a0f1f)],
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: BoxDecoration(gradient: AppTheme.darkBackground),
           child: Column(
             children: [
               SafeArea(
@@ -56,7 +62,11 @@ class ProfileSettingsPage extends ConsumerWidget {
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         padding: EdgeInsets.zero,
                       ),
-                      const Text('Profile & Settings', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                      const Text('Profile & Settings',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -106,7 +116,8 @@ class _ProfileTab extends ConsumerWidget {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: const Color(0xFFFF5C73).withValues(alpha: 0.2),
+                  backgroundColor:
+                      const Color(0xFFFF5C73).withValues(alpha: 0.2),
                   child: Text(
                     profile.avatar,
                     style: const TextStyle(
@@ -117,17 +128,25 @@ class _ProfileTab extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(profile.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                Text(profile.name,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF5C73).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     profile.role,
-                    style: const TextStyle(color: Color(0xFFFF5C73), fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        color: Color(0xFFFF5C73),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -138,15 +157,21 @@ class _ProfileTab extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Edit Profile', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text('Edit Profile',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 _EditableField(
                   label: 'Full Name',
                   initialValue: profile.name,
                   icon: Icons.person,
                   onSave: (value) {
-                    ref.read(userProfileProvider.notifier).state = profile.copyWith(name: value);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated')));
+                    ref.read(userProfileProvider.notifier).state =
+                        profile.copyWith(name: value);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Profile updated')));
                   },
                 ),
                 const SizedBox(height: 16),
@@ -155,8 +180,10 @@ class _ProfileTab extends ConsumerWidget {
                   initialValue: profile.email,
                   icon: Icons.email,
                   onSave: (value) {
-                    ref.read(userProfileProvider.notifier).state = profile.copyWith(email: value);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email updated')));
+                    ref.read(userProfileProvider.notifier).state =
+                        profile.copyWith(email: value);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Email updated')));
                   },
                 ),
                 const SizedBox(height: 16),
@@ -165,18 +192,24 @@ class _ProfileTab extends ConsumerWidget {
                   initialValue: profile.phone,
                   icon: Icons.phone,
                   onSave: (value) {
-                    ref.read(userProfileProvider.notifier).state = profile.copyWith(phone: value);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone updated')));
+                    ref.read(userProfileProvider.notifier).state =
+                        profile.copyWith(phone: value);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Phone updated')));
                   },
                 ),
                 const SizedBox(height: 32),
                 const Divider(color: Color(0xFF334155)),
                 const SizedBox(height: 20),
-                const Text('App Info', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text('App Info',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 _InfoTile('Version', 'v1.0.0'),
                 _InfoTile('Build', '2024.001'),
-                const SizedBox(height: 40),
+                const SizedBox(height: Spacing.xxxl),
               ],
             ),
           ),
@@ -199,7 +232,11 @@ class _SettingsTab extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Notifications', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text('Notifications',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             _ToggleTile('Push Notifications', true, (value) {}),
             _ToggleTile('Attendance Reminders', true, (value) {}),
@@ -207,9 +244,14 @@ class _SettingsTab extends ConsumerWidget {
             const SizedBox(height: 30),
             const Divider(color: Color(0xFF334155)),
             const SizedBox(height: 20),
-            const Text('Inactivity Settings', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text('Inactivity Settings',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            const Text('Mark members inactive after (days)', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+            const Text('Mark members inactive after (days)',
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -225,22 +267,32 @@ class _SettingsTab extends ConsumerWidget {
                       activeTrackColor: const Color(0xFFFF5C73),
                       inactiveTrackColor: const Color(0xFF334155),
                       thumbColor: const Color(0xFFFF5C73),
-                      overlayColor: const Color(0xFFFF5C73).withValues(alpha: 0.3),
+                      overlayColor:
+                          const Color(0xFFFF5C73).withValues(alpha: 0.3),
                     ),
                     child: Slider(
                       value: threshold.toDouble(),
                       min: 5,
                       max: 30,
                       divisions: 5,
-                      onChanged: (value) => ref.read(inactivityThresholdProvider.notifier).state = value.toInt(),
+                      onChanged: (value) => ref
+                          .read(inactivityThresholdProvider.notifier)
+                          .state = value.toInt(),
                     ),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('5 days', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
-                      Text('$threshold days', style: const TextStyle(color: Color(0xFFFF5C73), fontWeight: FontWeight.w600)),
-                      const Text('30 days', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                      const Text('5 days',
+                          style: TextStyle(
+                              color: Color(0xFF64748B), fontSize: 11)),
+                      Text('$threshold days',
+                          style: const TextStyle(
+                              color: Color(0xFFFF5C73),
+                              fontWeight: FontWeight.w600)),
+                      const Text('30 days',
+                          style: TextStyle(
+                              color: Color(0xFF64748B), fontSize: 11)),
                     ],
                   ),
                 ],
@@ -249,7 +301,11 @@ class _SettingsTab extends ConsumerWidget {
             const SizedBox(height: 30),
             const Divider(color: Color(0xFF334155)),
             const SizedBox(height: 20),
-            const Text('Account', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text('Account',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () => _showLogoutDialog(context),
@@ -260,7 +316,7 @@ class _SettingsTab extends ConsumerWidget {
                 minimumSize: const Size(double.infinity, 50),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: Spacing.xxxl),
           ],
         ),
       ),
@@ -272,16 +328,20 @@ class _SettingsTab extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        content: const Text('Are you sure you want to logout?', style: TextStyle(color: Color(0xFF94A3B8))),
+        title: const Text('Logout',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: const Text('Are you sure you want to logout?',
+            style: TextStyle(color: Color(0xFF94A3B8))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+            child: const Text('Cancel',
+                style: TextStyle(color: Color(0xFF94A3B8))),
           ),
           FilledButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logged out')));
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(const SnackBar(content: Text('Logged out')));
               Navigator.pop(context);
               Navigator.pop(context);
             },
@@ -298,7 +358,11 @@ class _EditableField extends StatefulWidget {
   final String label, initialValue;
   final IconData icon;
   final Function(String) onSave;
-  const _EditableField({required this.label, required this.initialValue, required this.icon, required this.onSave});
+  const _EditableField(
+      {required this.label,
+      required this.initialValue,
+      required this.icon,
+      required this.onSave});
 
   @override
   State<_EditableField> createState() => _EditableFieldState();
@@ -323,11 +387,11 @@ class _EditableFieldState extends State<_EditableField> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(Spacing.lg),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppTheme.surface.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,13 +403,18 @@ class _EditableFieldState extends State<_EditableField> {
                 children: [
                   Icon(widget.icon, size: 18, color: const Color(0xFFFF5C73)),
                   const SizedBox(width: 12),
-                  Text(widget.label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text(widget.label,
+                      style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500)),
                 ],
               ),
               if (!isEditing)
                 IconButton(
                   onPressed: () => setState(() => isEditing = true),
-                  icon: const Icon(Icons.edit, size: 16, color: Color(0xFFFF5C73)),
+                  icon: const Icon(Icons.edit,
+                      size: 16, color: Color(0xFFFF5C73)),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 )
@@ -354,7 +423,8 @@ class _EditableFieldState extends State<_EditableField> {
                   children: [
                     GestureDetector(
                       onTap: () => setState(() => isEditing = false),
-                      child: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                      child: const Icon(Icons.close,
+                          size: 16, color: Color(0xFF64748B)),
                     ),
                     const SizedBox(width: 12),
                     GestureDetector(
@@ -362,7 +432,8 @@ class _EditableFieldState extends State<_EditableField> {
                         widget.onSave(ctrl.text);
                         setState(() => isEditing = false);
                       },
-                      child: const Icon(Icons.check, size: 16, color: Color(0xFF10B981)),
+                      child: const Icon(Icons.check,
+                          size: 16, color: Color(0xFF10B981)),
                     ),
                   ],
                 ),
@@ -376,12 +447,18 @@ class _EditableFieldState extends State<_EditableField> {
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFF5C73))),
+                enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF334155))),
+                focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFFF5C73))),
               ),
             )
           else
-            Text(ctrl.text, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+            Text(ctrl.text,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -420,7 +497,11 @@ class _ToggleTileState extends State<_ToggleTile> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(widget.label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600)),
           Transform.scale(
             scale: 0.8,
             child: Switch(
@@ -429,7 +510,7 @@ class _ToggleTileState extends State<_ToggleTile> {
                 setState(() => value = newValue);
                 widget.onChanged(newValue);
               },
-              activeThumbColor: const Color(0xFFFF5C73),
+              activeThumbColor: AppTheme.accent,
             ),
           ),
         ],
@@ -449,8 +530,13 @@ class _InfoTile extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );
