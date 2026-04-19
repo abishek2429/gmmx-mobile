@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/config.dart';
-import '../../core/network.dart';
+import '../../core/network/dio_client.dart';
 
 class QrAttendancePage extends ConsumerStatefulWidget {
   const QrAttendancePage({super.key});
@@ -32,10 +31,10 @@ class _QrAttendancePageState extends ConsumerState<QrAttendancePage> {
     });
 
     try {
-      final dio = ref.read(dioProvider);
+      final dio = ref.read(dioClientProvider);
       final response = await dio.post(
         '/api/attendance/qr/generate',
-        data: {'tenantSlug': AppConfig.tenantSlug},
+        data: {'tenantSlug': 'titan-hq'},
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -76,11 +75,11 @@ class _QrAttendancePageState extends ConsumerState<QrAttendancePage> {
     });
 
     try {
-      final dio = ref.read(dioProvider);
+      final dio = ref.read(dioClientProvider);
       final response = await dio.post(
         '/api/attendance/scan',
         data: {
-          'tenantSlug': AppConfig.tenantSlug,
+          'tenantSlug': 'titan-hq',
           'qrToken': qrToken,
           'memberId': memberId,
         },
@@ -133,7 +132,7 @@ class _QrAttendancePageState extends ConsumerState<QrAttendancePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Tenant: ${AppConfig.tenantSlug}',
+                          'Tenant: ${'titan-hq'}',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),

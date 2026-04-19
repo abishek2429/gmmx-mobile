@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/theme_provider.dart';
-import '../../../core/ui/app_theme.dart';
-import '../../../core/ui/components.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/gmmx_components.dart';
 import '../../attendance/qr_attendance_page.dart';
 import '../../plans/presentation/plan_list_page.dart';
 
@@ -51,29 +52,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           SingleChildScrollView(
             controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(
-                Spacing.lg, Spacing.sm, Spacing.lg, 120),
+                16, 4, 16, 120),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildAnimatedTopBar(context, isDark),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
                 _buildHeroCard(isDark),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
                 _buildPrimaryActions(context, isDark),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
                 _buildStatGrid(isDark),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
                 _buildRecentSessions(isDark),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
                 _buildLeaderboardCard(isDark),
-                const SizedBox(height: Spacing.xl),
+                const SizedBox(height: 24),
                 _buildPremiumCard(context, isDark),
-                const SizedBox(height: Spacing.lg),
+                const SizedBox(height: 16),
               ],
             ),
           ),
           Positioned(
-            right: Spacing.lg,
+            right: 16,
             bottom: 120,
             child: _buildFloatingMenu(context),
           ),
@@ -99,17 +100,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 const Text(
                   'GMMX',
                   style: TextStyle(
-                    color: AppTheme.accent,
+                    color: AppColors.primary,
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: Spacing.xs),
+                const SizedBox(height: 2),
                 Text(
                   'Welcome back, Arjun',
                   style: TextStyle(
-                    color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                    color: isDark ? AppColors.textMuted : AppColors.textMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
@@ -126,26 +127,26 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(Spacing.sm),
+                    padding: const EdgeInsets.all(4),
                     decoration: AppTheme.glassButton(isDark: isDark),
                     child: Icon(Icons.notifications_rounded,
                         size: 18,
                         color:
-                            isDark ? AppTheme.textMuted : AppTheme.lightMuted),
+                            isDark ? AppColors.textMuted : AppColors.textMuted),
                   ),
                 ),
-                const SizedBox(width: Spacing.md),
+                const SizedBox(width: 8),
                 Container(
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppTheme.accent, AppTheme.accentSoft],
+                      colors: [AppColors.primary, AppColors.primarySoft],
                     ),
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.accent.withValues(alpha: 0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -180,7 +181,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         return GlassCard(
           isDark: isDark,
           radius: 20,
-          padding: const EdgeInsets.all(Spacing.lg),
+          padding: const EdgeInsets.all(16),
           onTap: null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,17 +196,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         'Today\'s Status',
                         style: TextStyle(
                           color:
-                              isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                              isDark ? AppColors.textMuted : AppColors.textMuted,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.8,
                         ),
                       ),
-                      const SizedBox(height: Spacing.sm),
+                      const SizedBox(height: 4),
                       const Text(
                         'No session logged yet',
                         style: TextStyle(
-                          color: AppTheme.textPrimary,
+                          color: AppColors.textMain,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -214,25 +215,25 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.md,
-                      vertical: Spacing.sm,
+                      horizontal: 8,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.accent.withValues(alpha: 0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppTheme.accent.withValues(alpha: 0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                       ),
                     ),
                     child: const Row(
                       children: [
                         Icon(Icons.local_fire_department_rounded,
-                            size: 14, color: AppTheme.accent),
-                        SizedBox(width: Spacing.xs),
+                            size: 14, color: AppColors.primary),
+                        SizedBox(width: 2),
                         Text(
                           'STREAK 12',
                           style: TextStyle(
-                            color: AppTheme.accent,
+                            color: AppColors.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.5,
@@ -243,11 +244,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   ),
                 ],
               ),
-              const SizedBox(height: Spacing.lg),
+              const SizedBox(height: 16),
               Text(
                 'Start your workout to continue your 12-day streak. You\'re on fire! 🔥',
                 style: TextStyle(
-                  color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                  color: isDark ? AppColors.textMuted : AppColors.textMuted,
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -288,7 +289,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             },
           ),
         ),
-        const SizedBox(width: Spacing.md),
+        const SizedBox(width: 8),
         Expanded(
           child: GlassButton(
             label: 'Attendance',
@@ -322,9 +323,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget _buildStatGrid(bool isDark) {
     final metrics = [
       ('STREAK', '12', 'days', const Color(0xFFFF8D2F)),
-      ('PR DEADLIFT', '225 KG', 'personal best', AppTheme.accent),
+      ('PR DEADLIFT', '225 KG', 'personal best', AppColors.primary),
       ('THIS WEEK', '4', 'workouts', const Color(0xFF10B981)),
-      ('AVG DURATION', '49m', 'per session', AppTheme.accentSoft),
+      ('AVG DURATION', '49m', 'per session', AppColors.primarySoft),
     ];
 
     return Column(
@@ -340,7 +341,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 delayMs: 100,
               ),
             ),
-            const SizedBox(width: Spacing.md),
+            const SizedBox(width: 8),
             Expanded(
               child: AnimatedMetricCard(
                 label: metrics[1].$1,
@@ -352,7 +353,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             ),
           ],
         ),
-        const SizedBox(height: Spacing.md),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -364,7 +365,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 delayMs: 200,
               ),
             ),
-            const SizedBox(width: Spacing.md),
+            const SizedBox(width: 8),
             Expanded(
               child: AnimatedMetricCard(
                 label: metrics[3].$1,
@@ -394,7 +395,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             );
           },
         ),
-        const SizedBox(height: Spacing.md),
+        const SizedBox(height: 8),
         _buildSwipeableSessionRow(
           isDark,
           'Leg Day',
@@ -402,7 +403,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           '💪',
           Colors.blue,
         ),
-        const SizedBox(height: Spacing.sm),
+        const SizedBox(height: 4),
         _buildSwipeableSessionRow(
           isDark,
           'Push Workout',
@@ -410,7 +411,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           '🦾',
           Colors.orange,
         ),
-        const SizedBox(height: Spacing.sm),
+        const SizedBox(height: 4),
         _buildSwipeableSessionRow(
           isDark,
           'Cardio Session',
@@ -442,7 +443,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       child: GlassCard(
         isDark: isDark,
         radius: 12,
-        padding: const EdgeInsets.all(Spacing.md),
+        padding: const EdgeInsets.all(8),
         child: Row(
           children: [
             Container(
@@ -462,7 +463,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 ),
               ),
             ),
-            const SizedBox(width: Spacing.md),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,16 +471,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   Text(
                     title,
                     style: const TextStyle(
-                      color: AppTheme.textPrimary,
+                      color: AppColors.textMain,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: Spacing.xs),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                      color: isDark ? AppColors.textMuted : AppColors.textMuted,
                       fontSize: 12,
                     ),
                   ),
@@ -488,8 +489,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             ),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.md,
-                vertical: Spacing.xs,
+                horizontal: 8,
+                vertical: 2,
               ),
               decoration: BoxDecoration(
                 color: accentColor.withValues(alpha: 0.15),
@@ -520,7 +521,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           title: 'Top Performers',
           action: 'VIEW ALL',
         ),
-        const SizedBox(height: Spacing.md),
+        const SizedBox(height: 8),
         GlassCard(
           isDark: isDark,
           radius: 16,
@@ -577,11 +578,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   }) {
     return Container(
       color: isCurrentUser
-          ? AppTheme.accent.withValues(alpha: 0.08)
+          ? AppColors.primary.withValues(alpha: 0.08)
           : Colors.transparent,
       padding: const EdgeInsets.symmetric(
-        horizontal: Spacing.md,
-        vertical: Spacing.md,
+        horizontal: 8,
+        vertical: 8,
       ),
       child: Row(
         children: [
@@ -589,7 +590,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             medal,
             style: const TextStyle(fontSize: 18),
           ),
-          const SizedBox(width: Spacing.md),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,16 +598,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 Text(
                   name,
                   style: const TextStyle(
-                    color: AppTheme.textPrimary,
+                    color: AppColors.textMain,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: Spacing.xs),
+                const SizedBox(height: 2),
                 Text(
                   'Rank #$rank',
                   style: TextStyle(
-                    color: isDark ? AppTheme.textMuted : AppTheme.lightMuted,
+                    color: isDark ? AppColors.textMuted : AppColors.textMuted,
                     fontSize: 11,
                   ),
                 ),
@@ -616,7 +617,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           Text(
             score,
             style: const TextStyle(
-              color: AppTheme.accent,
+              color: AppColors.primary,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -631,7 +632,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     return GlassCard(
       isDark: isDark,
       radius: 16,
-      padding: const EdgeInsets.all(Spacing.lg),
+      padding: const EdgeInsets.all(16),
       onTap: () {
         Navigator.of(context).push(
           PageRouteBuilder(
@@ -656,17 +657,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   const Text(
                     'Premium Membership',
                     style: TextStyle(
-                      color: AppTheme.accent,
+                      color: AppColors.primary,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: Spacing.xs),
+                  const SizedBox(height: 2),
                   Text(
                     'Unlock exclusive features',
                     style: TextStyle(
-                      color: isDark ? AppTheme.textPrimary : AppTheme.lightText,
+                      color: isDark ? AppColors.textMain : AppColors.textMain,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -675,12 +676,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               ),
               const Icon(
                 Icons.star_rounded,
-                color: AppTheme.accent,
+                color: AppColors.primary,
                 size: 28,
               ),
             ],
           ),
-          const SizedBox(height: Spacing.lg),
+          const SizedBox(height: 16),
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -702,10 +703,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             },
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppTheme.accent, AppTheme.accentSoft],
+                  colors: [AppColors.primary, AppColors.primarySoft],
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),

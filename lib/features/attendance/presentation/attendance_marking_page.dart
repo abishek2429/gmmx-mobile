@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/ui/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
 
 class AttendanceMarkingPage extends StatelessWidget {
   const AttendanceMarkingPage({super.key});
@@ -8,7 +8,7 @@ class AttendanceMarkingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightBg,
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
@@ -19,12 +19,12 @@ class AttendanceMarkingPage extends StatelessWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  const Text('MORNING SESSION', style: TextStyle(color: AppTheme.lightMuted, letterSpacing: 1.1, fontWeight: FontWeight.w700)),
+                  const Text('MORNING SESSION', style: TextStyle(color: AppColors.textMuted, letterSpacing: 1.1, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(color: const Color(0xFFEFD9DF), borderRadius: BorderRadius.circular(999)),
-                    child: const Text('CARRYING THE LOGS', style: TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w700, fontSize: 11)),
+                    child: const Text('CARRYING THE LOGS', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 11)),
                   ),
                 ],
               ),
@@ -32,15 +32,15 @@ class AttendanceMarkingPage extends StatelessWidget {
               const Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(text: 'Welcome back,\n', style: TextStyle(color: AppTheme.lightText, fontSize: 42, fontWeight: FontWeight.w800, height: 0.98)),
-                    TextSpan(text: 'Aditya', style: TextStyle(color: Color(0xFFBF264E), fontSize: 52, fontWeight: FontWeight.w900, height: 0.95)),
+                    TextSpan(text: 'Welcome back,\n', style: TextStyle(color: AppColors.textMain, fontSize: 42, fontWeight: FontWeight.w800, height: 0.98)),
+                    TextSpan(text: 'Aditya', style: TextStyle(color: AppColors.primary, fontSize: 52, fontWeight: FontWeight.w900, height: 0.95)),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
                 '"They don\'t know me son!" - Stay hard.',
-                style: TextStyle(color: AppTheme.lightMuted, fontSize: 20, fontWeight: FontWeight.w500),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 20, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 18),
               _statusCard(),
@@ -54,11 +54,11 @@ class AttendanceMarkingPage extends StatelessWidget {
               Center(
                 child: Column(
                   children: [
-                    const Text('Struggling to sync?', style: TextStyle(color: AppTheme.lightMuted, fontSize: 16)),
+                    const Text('Struggling to sync?', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
                     const SizedBox(height: 6),
                     TextButton(
                       onPressed: () {},
-                      child: const Text('Forgot phone?', style: TextStyle(color: Color(0xFFBF264E), fontSize: 18, fontWeight: FontWeight.w700)),
+                      child: const Text('Forgot phone?', style: TextStyle(color: AppColors.primary, fontSize: 18, fontWeight: FontWeight.w700)),
                     ),
                     OutlinedButton.icon(
                       onPressed: () {},
@@ -79,7 +79,7 @@ class AttendanceMarkingPage extends StatelessWidget {
               const SizedBox(height: 14),
               Row(
                 children: const [
-                  Expanded(child: _LightInfoCard(label: 'PEAK HOURS', value: '06:00 AM -\n09:00 AM', tint: Color(0xFFE7D8DC), icon: Icons.schedule_rounded)),
+                  Expanded(child: _LightInfoCard(label: 'PEAK HOURS', value: '06:00 AM -\n09:00 AM', tint: AppColors.surfaceLight, icon: Icons.schedule_rounded)),
                   SizedBox(width: 12),
                   Expanded(child: _LightInfoCard(label: 'LIVE LOAD', value: '24 Members\nIn-Studio', tint: Color(0xFFD7DEEC), icon: Icons.groups_2_outlined)),
                 ],
@@ -94,7 +94,7 @@ class AttendanceMarkingPage extends StatelessWidget {
   Widget _topBar() {
     return Row(
       children: [
-        const Text('GMMX', style: TextStyle(color: Color(0xFFC3184A), fontWeight: FontWeight.w900, fontSize: 34, letterSpacing: -0.8)),
+        const Text('GMMX', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 34, letterSpacing: -0.8)),
         const Spacer(),
         IconButton(onPressed: () {}, icon: const Icon(Icons.nightlight_round, color: Color(0xFF6B7690))),
         IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF6B7690))),
@@ -104,7 +104,7 @@ class AttendanceMarkingPage extends StatelessWidget {
 
   Widget _statusCard() {
     return Container(
-      decoration: BoxDecoration(color: AppTheme.lightCard, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: BorderRadius.circular(24)),
       padding: const EdgeInsets.all(16),
       child: const Row(
         children: [
@@ -118,8 +118,8 @@ class AttendanceMarkingPage extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(text: 'Current Status\n', style: TextStyle(color: AppTheme.lightMuted, fontSize: 16)),
-                  TextSpan(text: 'Not in gym area', style: TextStyle(color: AppTheme.lightText, fontSize: 17, fontWeight: FontWeight.w700)),
+                  TextSpan(text: 'Current Status\n', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
+                  TextSpan(text: 'Not in gym area', style: TextStyle(color: AppColors.textMain, fontSize: 17, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
@@ -150,7 +150,7 @@ class AttendanceMarkingPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-              child: const Text('TITAN GYM HQ', style: TextStyle(color: Color(0xFFC3184A), fontWeight: FontWeight.w700, fontSize: 11)),
+              child: const Text('TITAN GYM HQ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 11)),
             ),
           ),
           Positioned(
@@ -203,15 +203,15 @@ class AttendanceMarkingPage extends StatelessWidget {
     const dotGreen = Color(0xFF23B969);
     const dotRed = Color(0xFFD14367);
     return Container(
-      decoration: BoxDecoration(color: AppTheme.lightCard, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: BorderRadius.circular(24)),
       padding: const EdgeInsets.all(16),
       child: const Column(
         children: [
           Row(
             children: [
-              Text('Recent Logs', style: TextStyle(color: AppTheme.lightText, fontSize: 20, fontWeight: FontWeight.w700)),
+              Text('Recent Logs', style: TextStyle(color: AppColors.textMain, fontSize: 20, fontWeight: FontWeight.w700)),
               Spacer(),
-              Text('LAST 3 DAYS', style: TextStyle(color: Color(0xFFBF264E), fontWeight: FontWeight.w700, fontSize: 12)),
+              Text('LAST 3 DAYS', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12)),
             ],
           ),
           SizedBox(height: 12),
@@ -225,14 +225,14 @@ class AttendanceMarkingPage extends StatelessWidget {
 
   Widget _forecastCard() {
     return Container(
-      decoration: BoxDecoration(color: AppTheme.lightCard, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: BorderRadius.circular(24)),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Text('Peak Hour Forecast', style: TextStyle(color: AppTheme.lightText, fontSize: 20, fontWeight: FontWeight.w700)),
+              Text('Peak Hour Forecast', style: TextStyle(color: AppColors.textMain, fontSize: 20, fontWeight: FontWeight.w700)),
               Spacer(),
               Icon(Icons.north_east_rounded, color: Color(0xFF6B5F64)),
             ],
@@ -310,11 +310,11 @@ class _LogRow extends StatelessWidget {
         children: [
           Icon(Icons.circle, size: 8, color: color),
           const SizedBox(width: 10),
-          Expanded(child: Text(title, style: const TextStyle(color: AppTheme.lightText, fontSize: 15))),
-          Text(time, style: const TextStyle(color: AppTheme.lightMuted, fontSize: 14)),
+          Expanded(child: Text(title, style: const TextStyle(color: AppColors.textMain, fontSize: 15))),
+          Text(time, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
           if (duration.isNotEmpty) ...[
-            const Text(' • ', style: TextStyle(color: AppTheme.lightMuted)),
-            Text(duration, style: const TextStyle(color: AppTheme.lightMuted, fontSize: 14)),
+            const Text(' • ', style: TextStyle(color: AppColors.textMuted)),
+            Text(duration, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
           ],
         ],
       ),

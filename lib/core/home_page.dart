@@ -7,8 +7,9 @@ import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/plans/presentation/plan_list_page.dart';
 import '../features/profile/presentation/profile_settings_page.dart';
 import 'providers/theme_provider.dart';
-import 'ui/app_theme.dart';
-import 'ui/components.dart';
+import 'theme/app_colors.dart';
+import 'theme/app_theme.dart';
+import 'widgets/gmmx_components.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -42,8 +43,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeProvider);
-    final bgGradient =
-        isDark ? AppTheme.darkBackground : AppTheme.lightBackground;
+    final bgGradient = isDark
+        ? const LinearGradient(
+            colors: [Color(0xFF010C2B), Color(0xFF03081F), Color(0xFF00081E)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFFFFF5F6), Color(0xFFFFF0F2)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -59,9 +69,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           Positioned(
-            left: Spacing.lg,
-            right: Spacing.lg,
-            bottom: Spacing.lg,
+            left: 16,
+            right: 16,
+            bottom: 16,
             child: SafeArea(
               top: false,
               child: _buildNavigationBar(isDark),
@@ -76,7 +86,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.sm, vertical: Spacing.xs),
+          horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF0C1734).withValues(alpha: 0.4)
@@ -107,7 +117,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: _buildNavButton(item, isActive, index, isDark),
             );
           }),
-          const SizedBox(width: Spacing.xs),
+          const SizedBox(width: 2),
           _buildThemeToggle(isDark),
         ],
       ),
@@ -119,15 +129,15 @@ class _HomePageState extends ConsumerState<HomePage> {
       onTap: () => setState(() => selectedIndex = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           color: isActive
-              ? AppTheme.accent.withValues(alpha: 0.15)
+              ? AppColors.primary.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isActive
-                ? AppTheme.accent.withValues(alpha: 0.3)
+                ? AppColors.primary.withValues(alpha: 0.3)
                 : Colors.transparent,
             width: 1,
           ),
@@ -138,13 +148,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             Icon(
               item.icon,
               size: 18,
-              color: isActive ? AppTheme.accent : AppTheme.textMuted,
+              color: isActive ? AppColors.primary : AppColors.textMuted,
             ),
-            const SizedBox(height: Spacing.xs),
+            const SizedBox(height: 2),
             Text(
               item.label,
               style: TextStyle(
-                color: isActive ? AppTheme.textPrimary : AppTheme.textMuted,
+                color: isActive ? AppColors.textMain : AppColors.textMuted,
                 fontSize: 9,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 letterSpacing: 0.2,
@@ -179,7 +189,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         child: Icon(
           isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-          color: isDark ? AppTheme.accent : AppTheme.lightText,
+          color: isDark ? AppColors.primary : AppColors.textMain,
           size: 16,
         ),
       ),

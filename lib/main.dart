@@ -1,10 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'core/ui/app_theme.dart';
+import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
-import 'features/auth/presentation/otp_request_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,17 +15,20 @@ Future<void> main() async {
   runApp(const ProviderScope(child: GmmxApp()));
 }
 
-class GmmxApp extends StatelessWidget {
+class GmmxApp extends ConsumerWidget {
   const GmmxApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
       title: 'GMMX',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.dark,
-      home: const OtpRequestPage(),
+      themeMode: ThemeMode.light,
+      routerConfig: router,
     );
   }
 }

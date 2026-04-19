@@ -23,51 +23,45 @@ class PlanListPage extends ConsumerWidget {
     final plans = ref.watch(planListProvider);
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [const Color(0xFF0f172a), const Color(0xFF1a0f1f)],
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Membership Plans', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-                    FilledButton.icon(
-                      onPressed: () => _showCreatePlanDialog(context, ref),
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text('New'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF5C73),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Membership Plans', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                  FilledButton.icon(
+                    onPressed: () => _showCreatePlanDialog(context),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('New'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF5C73),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: plans.length,
-                  itemBuilder: (context, index) => _PlanCard(plans[index]),
-                ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: plans.length,
+                itemBuilder: (context, index) => _PlanCard(plans[index]),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showCreatePlanDialog(BuildContext context, WidgetRef ref) {
+  void _showCreatePlanDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => _CreatePlanDialog(ref: ref),
+      builder: (context) => const _CreatePlanDialog(),
     );
   }
 }
@@ -82,7 +76,7 @@ class _PlanCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [const Color(0xFF1E293B), const Color(0xFF0F172A)]),
+        gradient: const LinearGradient(colors: [Color(0xFF1E293B), Color(0xFF0F172A)]),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF334155)),
       ),
@@ -132,15 +126,14 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
-class _CreatePlanDialog extends StatefulWidget {
-  final WidgetRef ref;
-  const _CreatePlanDialog({required this.ref});
+class _CreatePlanDialog extends ConsumerStatefulWidget {
+  const _CreatePlanDialog();
 
   @override
-  State<_CreatePlanDialog> createState() => _CreatePlanDialogState();
+  ConsumerState<_CreatePlanDialog> createState() => _CreatePlanDialogState();
 }
 
-class _CreatePlanDialogState extends State<_CreatePlanDialog> {
+class _CreatePlanDialogState extends ConsumerState<_CreatePlanDialog> {
   late TextEditingController nameCtrl, priceCtrl, sessionsCtrl;
   bool isLoading = false;
 
@@ -164,6 +157,7 @@ class _CreatePlanDialogState extends State<_CreatePlanDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: const Color(0xFF1E293B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -226,47 +220,30 @@ class _CreatePlanDialogState extends State<_CreatePlanDialog> {
       sessionsPerMonth: sessions,
       description: '$sessions sessions/month',
     );
-    widget.ref.read(planListProvider.notifier).state = [...widget.ref.read(planListProvider), newPlan];
+    
+    // Using the native 'ref' from ConsumerState
+    ref.read(planListProvider.notifier).state = [...ref.read(planListProvider), newPlan];
+    
     if (!mounted) return;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan created')));
   }
 }
 
-class _FormField extends StatefulWidget {
+class _FormField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final bool isNumber;
   const _FormField(this.label, this.controller, {this.isNumber = false});
 
   @override
-  State<_FormField> createState() => _FormFieldState();
-}
-
-class _FormFieldState extends State<_FormField> {
-  late FocusNode focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    focusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller: widget.controller,
-      focusNode: focusNode,
-      keyboardType: widget.isNumber ? TextInputType.number : TextInputType.text,
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        labelText: widget.label,
+        labelText: label,
         labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),

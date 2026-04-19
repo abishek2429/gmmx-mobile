@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'app_theme.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 
 /// Consistent spacing values
 class Spacing {
@@ -31,7 +32,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final card = Container(
       decoration: BoxDecoration(
-        color: AppTheme.surface.withValues(alpha: 0.7),
+        color: AppColors.surfaceDark.withOpacity(0.7),
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.05),
@@ -74,7 +75,7 @@ class AppBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: Spacing.md, vertical: Spacing.xs),
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppTheme.accent.withValues(alpha: 0.15),
+        color: backgroundColor ?? AppColors.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -82,7 +83,7 @@ class AppBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: textColor ?? AppTheme.accent,
+          color: textColor ?? AppColors.primary,
           letterSpacing: 0.5,
         ),
       ),
@@ -116,7 +117,7 @@ class MetricCard extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: AppTheme.textMuted,
+              color: AppColors.textMuted,
               fontSize: 10,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w600,
@@ -126,7 +127,7 @@ class MetricCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: valueColor ?? AppTheme.accent,
+              color: valueColor ?? AppColors.primary,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
@@ -136,7 +137,7 @@ class MetricCard extends StatelessWidget {
             Text(
               unit!,
               style: const TextStyle(
-                color: AppTheme.textMuted,
+                color: AppColors.textMuted,
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
               ),
@@ -179,7 +180,7 @@ class IconPill extends StatelessWidget {
             border: Border.all(
                 color: Colors.white.withValues(alpha: 0.05), width: 0.5),
           ),
-          child: Icon(icon, color: iconColor ?? AppTheme.textMuted, size: 18),
+          child: Icon(icon, color: iconColor ?? AppColors.textMuted, size: 18),
         ),
       ),
     );
@@ -219,7 +220,7 @@ class AppTile extends StatelessWidget {
                   iconBackgroundColor ?? Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: AppTheme.accent, size: 18),
+            child: Icon(icon, color: AppColors.primary, size: 18),
           ),
           const SizedBox(width: Spacing.md),
           Expanded(
@@ -229,7 +230,7 @@ class AppTile extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: AppTheme.textPrimary,
+                    color: AppColors.textMain,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -238,7 +239,7 @@ class AppTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: AppTheme.textMuted,
+                    color: AppColors.textMuted,
                     fontSize: 12,
                   ),
                 ),
@@ -246,7 +247,7 @@ class AppTile extends StatelessWidget {
             ),
           ),
           Icon(Icons.chevron_right_rounded,
-              size: 18, color: AppTheme.textMuted.withValues(alpha: 0.6)),
+              size: 18, color: AppColors.textMuted.withValues(alpha: 0.6)),
         ],
       ),
     );
@@ -273,7 +274,7 @@ class SectionHeader extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            color: AppTheme.textPrimary,
+            color: AppColors.textMain,
             fontSize: 20,
             fontWeight: FontWeight.w700,
           ),
@@ -285,7 +286,7 @@ class SectionHeader extends StatelessWidget {
             child: Text(
               action!,
               style: const TextStyle(
-                color: AppTheme.accent,
+                color: AppColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -439,13 +440,13 @@ class _GlassButtonState extends State<GlassButton>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, size: 16, color: AppTheme.accent),
+                Icon(widget.icon, size: 16, color: AppColors.primary),
                 const SizedBox(width: Spacing.sm),
               ],
               Text(
                 widget.label,
                 style: TextStyle(
-                  color: widget.isActive ? AppTheme.accent : AppTheme.textMuted,
+                  color: widget.isActive ? AppColors.primary : AppColors.textMuted,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -518,7 +519,7 @@ class _AnimatedMetricCardState extends State<AnimatedMetricCard>
               Text(
                 widget.label,
                 style: const TextStyle(
-                  color: AppTheme.textMuted,
+                  color: AppColors.textMuted,
                   fontSize: 10,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w600,
@@ -528,7 +529,7 @@ class _AnimatedMetricCardState extends State<AnimatedMetricCard>
               Text(
                 widget.value,
                 style: TextStyle(
-                  color: widget.valueColor ?? AppTheme.accent,
+                  color: widget.valueColor ?? AppColors.primary,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -538,7 +539,7 @@ class _AnimatedMetricCardState extends State<AnimatedMetricCard>
                 Text(
                   widget.unit!,
                   style: const TextStyle(
-                    color: AppTheme.textMuted,
+                    color: AppColors.textMuted,
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
@@ -625,7 +626,7 @@ class _AnimatedFABState extends State<AnimatedFAB>
                   child: Container(
                     padding: const EdgeInsets.all(Spacing.md),
                     decoration: BoxDecoration(
-                      color: AppTheme.surface.withValues(alpha: 0.3),
+                      color: AppColors.surfaceDarkSoft.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.15),
@@ -634,12 +635,12 @@ class _AnimatedFABState extends State<AnimatedFAB>
                     child: Column(
                       children: [
                         Icon(widget.actions[index].icon,
-                            color: AppTheme.accent, size: 20),
+                            color: AppColors.primary, size: 20),
                         const SizedBox(height: Spacing.xs),
                         Text(
                           widget.actions[index].label,
                           style: const TextStyle(
-                            color: AppTheme.textMuted,
+                            color: AppColors.textMuted,
                             fontSize: 9,
                             fontWeight: FontWeight.w600,
                           ),
@@ -660,11 +661,11 @@ class _AnimatedFABState extends State<AnimatedFAB>
             child: Container(
               padding: const EdgeInsets.all(Spacing.lg),
               decoration: BoxDecoration(
-                color: AppTheme.accent,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.accent.withValues(alpha: 0.4),
+                    color: AppColors.primary.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),

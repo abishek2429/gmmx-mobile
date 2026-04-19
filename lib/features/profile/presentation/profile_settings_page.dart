@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/ui/app_theme.dart';
-import '../../../core/ui/components.dart';
+import '../../../core/theme/app_colors.dart';
 
 final userProfileProvider = StateProvider<UserProfile>((ref) {
   return UserProfile(
@@ -48,7 +47,13 @@ class ProfileSettingsPage extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Container(
-          decoration: BoxDecoration(gradient: AppTheme.darkBackground),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF010C2B), Color(0xFF03081F), Color(0xFF00081E)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
           child: Column(
             children: [
               SafeArea(
@@ -72,11 +77,11 @@ class ProfileSettingsPage extends ConsumerWidget {
                 ),
               ),
               Container(
-                color: const Color(0xFF1E293B),
+                color: AppColors.surfaceDarkSoft,
                 child: TabBar(
-                  labelColor: const Color(0xFFFF5C73),
-                  unselectedLabelColor: const Color(0xFF64748B),
-                  indicatorColor: const Color(0xFFFF5C73),
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textMuted,
+                  indicatorColor: AppColors.primary,
                   tabs: const [
                     Tab(text: 'Profile'),
                     Tab(text: 'Settings'),
@@ -117,11 +122,11 @@ class _ProfileTab extends ConsumerWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor:
-                      const Color(0xFFFF5C73).withValues(alpha: 0.2),
+                      AppColors.primary.withValues(alpha: 0.2),
                   child: Text(
                     profile.avatar,
                     style: const TextStyle(
-                      color: Color(0xFFFF5C73),
+                      color: AppColors.primary,
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
                     ),
@@ -138,13 +143,13 @@ class _ProfileTab extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF5C73).withValues(alpha: 0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     profile.role,
                     style: const TextStyle(
-                        color: Color(0xFFFF5C73),
+                        color: AppColors.primary,
                         fontSize: 12,
                         fontWeight: FontWeight.w600),
                   ),
@@ -209,7 +214,7 @@ class _ProfileTab extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _InfoTile('Version', 'v1.0.0'),
                 _InfoTile('Build', '2024.001'),
-                const SizedBox(height: Spacing.xxxl),
+                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -251,12 +256,12 @@ class _SettingsTab extends ConsumerWidget {
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             const Text('Mark members inactive after (days)',
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: AppColors.surfaceDarkSoft,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFF334155)),
               ),
@@ -264,11 +269,11 @@ class _SettingsTab extends ConsumerWidget {
                 children: [
                   SliderTheme(
                     data: SliderThemeData(
-                      activeTrackColor: const Color(0xFFFF5C73),
+                      activeTrackColor: AppColors.primary,
                       inactiveTrackColor: const Color(0xFF334155),
-                      thumbColor: const Color(0xFFFF5C73),
+                      thumbColor: AppColors.primary,
                       overlayColor:
-                          const Color(0xFFFF5C73).withValues(alpha: 0.3),
+                          AppColors.primary.withValues(alpha: 0.3),
                     ),
                     child: Slider(
                       value: threshold.toDouble(),
@@ -285,14 +290,14 @@ class _SettingsTab extends ConsumerWidget {
                     children: [
                       const Text('5 days',
                           style: TextStyle(
-                              color: Color(0xFF64748B), fontSize: 11)),
+                              color: AppColors.textMuted, fontSize: 11)),
                       Text('$threshold days',
                           style: const TextStyle(
-                              color: Color(0xFFFF5C73),
+                              color: AppColors.primary,
                               fontWeight: FontWeight.w600)),
                       const Text('30 days',
                           style: TextStyle(
-                              color: Color(0xFF64748B), fontSize: 11)),
+                              color: AppColors.textMuted, fontSize: 11)),
                     ],
                   ),
                 ],
@@ -316,7 +321,7 @@ class _SettingsTab extends ConsumerWidget {
                 minimumSize: const Size(double.infinity, 50),
               ),
             ),
-            const SizedBox(height: Spacing.xxxl),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -327,16 +332,16 @@ class _SettingsTab extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surfaceDarkSoft,
         title: const Text('Logout',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         content: const Text('Are you sure you want to logout?',
-            style: TextStyle(color: Color(0xFF94A3B8))),
+            style: TextStyle(color: AppColors.textMuted)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel',
-                style: TextStyle(color: Color(0xFF94A3B8))),
+                style: TextStyle(color: AppColors.textMuted)),
           ),
           FilledButton(
             onPressed: () {
@@ -387,11 +392,11 @@ class _EditableFieldState extends State<_EditableField> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(Spacing.lg),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface.withValues(alpha: 0.6),
+        color: AppColors.surfaceDark.withOpacity(0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,11 +406,11 @@ class _EditableFieldState extends State<_EditableField> {
             children: [
               Row(
                 children: [
-                  Icon(widget.icon, size: 18, color: const Color(0xFFFF5C73)),
+                  Icon(widget.icon, size: 18, color: AppColors.primary),
                   const SizedBox(width: 12),
                   Text(widget.label,
                       style: const TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.textMuted,
                           fontSize: 12,
                           fontWeight: FontWeight.w500)),
                 ],
@@ -414,7 +419,7 @@ class _EditableFieldState extends State<_EditableField> {
                 IconButton(
                   onPressed: () => setState(() => isEditing = true),
                   icon: const Icon(Icons.edit,
-                      size: 16, color: Color(0xFFFF5C73)),
+                      size: 16, color: AppColors.primary),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 )
@@ -424,7 +429,7 @@ class _EditableFieldState extends State<_EditableField> {
                     GestureDetector(
                       onTap: () => setState(() => isEditing = false),
                       child: const Icon(Icons.close,
-                          size: 16, color: Color(0xFF64748B)),
+                          size: 16, color: AppColors.textMuted),
                     ),
                     const SizedBox(width: 12),
                     GestureDetector(
@@ -450,7 +455,7 @@ class _EditableFieldState extends State<_EditableField> {
                 enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF334155))),
                 focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFFF5C73))),
+                    borderSide: BorderSide(color: AppColors.primary)),
               ),
             )
           else
@@ -490,7 +495,7 @@ class _ToggleTileState extends State<_ToggleTile> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.surfaceDarkSoft,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFF334155)),
       ),
@@ -510,7 +515,7 @@ class _ToggleTileState extends State<_ToggleTile> {
                 setState(() => value = newValue);
                 widget.onChanged(newValue);
               },
-              activeThumbColor: AppTheme.accent,
+              activeThumbColor: AppColors.primary,
             ),
           ),
         ],
@@ -531,7 +536,7 @@ class _InfoTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
           Text(value,
               style: const TextStyle(
                   color: Colors.white,
