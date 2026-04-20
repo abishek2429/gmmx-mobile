@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/gmmx_buttons.dart';
+import '../../../../core/config.dart';
 import '../../../../core/network/dio_client.dart';
 import 'package:dio/dio.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +19,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -39,7 +43,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       final dio = ref.read(dioClientProvider);
-      
+
       // Attempting Login
       // Note: baseUrl is 'http://10.0.2.2:8080'
       final response = await dio.post('/api/auth/login', data: {
@@ -53,17 +57,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } on DioException catch (e) {
       String errorMessage = 'Something went wrong';
-      
-      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.connectionError) {
-        errorMessage = 'Backend server is unreachable. Check if your DB/Core is running.';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Backend server is unreachable. Check if your DB/Core is running.';
       } else if (e.response?.statusCode == 401) {
         errorMessage = 'Invalid credentials. Please try again.';
       } else if (e.response?.statusCode == 500) {
         errorMessage = 'Server error. Database might not be connected.';
-      } else if (e.response?.data != null && e.response?.data['message'] != null) {
+      } else if (e.response?.data != null &&
+          e.response?.data['message'] != null) {
         errorMessage = e.response?.data['message'];
       }
-      
+
       _showFeedback(errorMessage, isError: true);
     } catch (e) {
       _showFeedback('Unexpected error: ${e.toString()}', isError: true);
@@ -78,7 +85,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         content: Row(
           children: [
             Icon(
-              isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+              isError
+                  ? Icons.error_outline_rounded
+                  : Icons.check_circle_outline_rounded,
               color: Colors.white,
             ),
             const SizedBox(width: 12),
@@ -100,6 +109,93 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    if (_isGoogleLoading) return;
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      final serverClientId = AppConfig.googleServerClientId;
+      final googleSignIn = GoogleSignIn(
+        scopes: const ['email', 'openid', 'profile'],
+        serverClientId: serverClientId.isNotEmpty ? serverClientId : null,
+      );
+
+      final account = await googleSignIn.signIn();
+      if (account == null) {
+        _showFeedback('Google sign-in was cancelled.', isError: false);
+        return;
+      }
+
+      final authentication = await account.authentication;
+      if (authentication.idToken == null &&
+          authentication.accessToken == null) {
+        _showFeedback(
+          'Google sign-in did not return tokens. Check your client ID setup.',
+          isError: true,
+        );
+        return;
+      }
+
+      _showFeedback(
+        'Google account accepted. Connecting to backend...',
+        isError: false,
+      );
+
+      final dio = ref.read(dioClientProvider);
+      await dio.post(
+        '/api/auth/google',
+        data: {
+          'tenantSlug': AppConfig.tenantSlug,
+          'email': account.email,
+          'displayName': account.displayName,
+          'idToken': authentication.idToken,
+          'accessToken': authentication.accessToken,
+        },
+      );
+
+      _showFeedback(
+        'Signed in with Google as ${account.email}.',
+        isError: false,
+      );
+
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        _showFeedback(
+          'Backend server is unreachable. Check if your DB/Core is running.',
+          isError: true,
+        );
+      } else if (e.response?.statusCode == 401) {
+        _showFeedback('Invalid credentials. Please try again.', isError: true);
+      } else if (e.response?.statusCode == 500) {
+        _showFeedback('Server error. Database might not be connected.',
+            isError: true);
+      } else if (e.response?.statusCode == 404) {
+        _showFeedback(
+          'Google login endpoint is missing on the backend. Add /api/auth/google and verify it returns 200.',
+          isError: true,
+        );
+      } else {
+        _showFeedback('Google sign-in failed: ${e.message}', isError: true);
+      }
+    } catch (e) {
+      final errorText = e.toString();
+      if (errorText.contains('ApiException: 10')) {
+        _showFeedback(
+          'Google sign-in is not configured correctly for Android. Add SHA-1 and SHA-256 to the Android OAuth client, and make sure the app package name matches the Google Cloud configuration.',
+          isError: true,
+        );
+      } else {
+        _showFeedback('Google sign-in failed: $errorText', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,7 +204,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textMain, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.textMain, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -137,7 +234,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              
+
               const SizedBox(height: 48),
 
               // Email or Mobile Field
@@ -154,7 +251,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: _identifierController,
                 decoration: InputDecoration(
                   hintText: 'e.g. hello@gmmx.app',
-                  prefixIcon: const Icon(Icons.person_outline_rounded, size: 22),
+                  prefixIcon:
+                      const Icon(Icons.person_outline_rounded, size: 22),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -188,10 +286,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   prefixIcon: const Icon(Icons.lock_outline_rounded, size: 22),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _isPasswordVisible
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    onPressed: () => setState(
+                        () => _isPasswordVisible = !_isPasswordVisible),
                   ),
                   filled: true,
                   fillColor: Colors.white,
@@ -205,14 +306,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {},
                   child: const Text(
                     'Forgot Password?',
-                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        color: AppColors.primary, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -247,13 +349,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
 
               GoogleSignInButton(
-                onPressed: () {
-                  // Handle Google Sign-In logic
-                },
+                onPressed: _handleGoogleSignIn,
               ),
 
+              if (_isGoogleLoading) ...[
+                const SizedBox(height: 12),
+                const Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 40),
-              
+
               Center(
                 child: TextButton(
                   onPressed: _launchRegisterUrl,

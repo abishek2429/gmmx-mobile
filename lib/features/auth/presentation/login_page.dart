@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/home_page.dart';
 import 'auth_controller.dart';
 
-enum LoginMode { backendOtp, firebasePhone, firebaseEmailOtp }
+enum LoginMode { backendOtp, phoneOtp, emailOtp }
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -154,12 +154,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               label: Text('OTP'),
                             ),
                             ButtonSegment(
-                              value: LoginMode.firebasePhone,
+                              value: LoginMode.phoneOtp,
                               icon: Icon(Icons.phone_android_rounded),
                               label: Text('Phone'),
                             ),
                             ButtonSegment(
-                              value: LoginMode.firebaseEmailOtp,
+                              value: LoginMode.emailOtp,
                               icon: Icon(Icons.mail_outline_rounded),
                               label: Text('Email'),
                             ),
@@ -175,14 +175,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        if (loginMode != LoginMode.firebaseEmailOtp)
+                        if (loginMode != LoginMode.emailOtp)
                           TextField(
                             controller: mobileController,
                             keyboardType: TextInputType.phone,
                             style: const TextStyle(color: Colors.white),
                             decoration: _inputDecoration('Mobile Number'),
                           ),
-                        if (loginMode == LoginMode.firebaseEmailOtp)
+                        if (loginMode == LoginMode.emailOtp)
                           TextField(
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -194,7 +194,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           child: otpRequested
                               ? Padding(
                                   padding: const EdgeInsets.only(top: 12),
-                                  child: loginMode != LoginMode.firebaseEmailOtp
+                                  child: loginMode != LoginMode.emailOtp
                                       ? TextField(
                                           controller: otpController,
                                           keyboardType: TextInputType.number,
@@ -278,19 +278,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.85)),
                           ),
-                        if (loginMode == LoginMode.firebasePhone)
+                        if (loginMode == LoginMode.phoneOtp)
                           Text(
-                            'Firebase verification id: ${authState?.firebaseVerificationId.isNotEmpty == true ? 'received' : 'pending'}',
+                            'Verification token: ${authState?.phoneVerificationToken.isNotEmpty == true ? 'received' : 'pending'}',
                             style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.85)),
                           ),
-                        if (loginMode == LoginMode.firebaseEmailOtp)
+                        if (loginMode == LoginMode.emailOtp)
                           Text(
                             'Email link sent to: ${authState?.email.isNotEmpty == true ? authState!.email : '-'}',
                             style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.85)),
                           ),
-                        if (loginMode == LoginMode.firebasePhone)
+                        if (loginMode == LoginMode.phoneOtp)
                           Container(
                             margin: const EdgeInsets.only(top: 10),
                             padding: const EdgeInsets.all(12),
@@ -301,7 +301,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   Border.all(color: const Color(0x443b82f6)),
                             ),
                             child: const Text(
-                              '💡 Tip: Firebase phone auth requires configuration in Firebase Console. Enable Phone provider, add your SMS region, and register your device SHA fingerprints.',
+                              'Phone OTP is handled by backend APIs. Ensure your auth service is running and OTP providers are configured.',
                               style: TextStyle(
                                   color: Color(0xFF93c5fd), fontSize: 12.5),
                             ),
@@ -379,12 +379,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         case LoginMode.backendOtp:
           await controller.requestBackendOtp(mobileController.text.trim());
           break;
-        case LoginMode.firebasePhone:
-          await controller
-              .requestFirebasePhoneOtp(mobileController.text.trim());
+        case LoginMode.phoneOtp:
+          await controller.requestPhoneOtp(mobileController.text.trim());
           break;
-        case LoginMode.firebaseEmailOtp:
-          await controller.sendEmailOtpLink(emailController.text.trim());
+        case LoginMode.emailOtp:
+          await controller.sendEmailOtp(emailController.text.trim());
           break;
       }
 
@@ -395,9 +394,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final requestSucceeded = !next.hasError &&
           switch (loginMode) {
             LoginMode.backendOtp => (data?.mobile.isNotEmpty ?? false),
-            LoginMode.firebasePhone =>
-              (data?.firebaseVerificationId.isNotEmpty ?? false),
-            LoginMode.firebaseEmailOtp => (data?.email.isNotEmpty ?? false),
+            LoginMode.phoneOtp =>
+              (data?.phoneVerificationToken.isNotEmpty ?? false),
+            LoginMode.emailOtp => (data?.email.isNotEmpty ?? false),
           };
 
       setState(() {
@@ -410,11 +409,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       case LoginMode.backendOtp:
         await controller.verifyBackendOtp(otpController.text.trim());
         break;
-      case LoginMode.firebasePhone:
-        await controller.verifyFirebasePhoneOtp(otpController.text.trim());
+      case LoginMode.phoneOtp:
+        await controller.verifyPhoneOtp(otpController.text.trim());
         break;
-      case LoginMode.firebaseEmailOtp:
-        await controller.verifyEmailOtpLink(emailLinkController.text.trim());
+      case LoginMode.emailOtp:
+        await controller.verifyEmailOtp(emailLinkController.text.trim());
         break;
     }
   }

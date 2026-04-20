@@ -41,33 +41,33 @@ class AuthController extends StateNotifier<AsyncValue<AuthState>> {
     }
   }
 
-  Future<void> requestFirebasePhoneOtp(String mobile) async {
+  Future<void> requestPhoneOtp(String mobile) async {
     state = const AsyncLoading();
     try {
-      final verificationId = await _repository.requestFirebasePhoneOtp(mobile);
+      final verificationId = await _repository.requestPhoneOtp(mobile);
       state = AsyncData(
-          AuthState(mobile: mobile, firebaseVerificationId: verificationId));
+          AuthState(mobile: mobile, phoneVerificationToken: verificationId));
     } catch (e, st) {
       state = AsyncError(e, st);
     }
   }
 
-  Future<AuthUser?> verifyFirebasePhoneOtp(String code) async {
+  Future<AuthUser?> verifyPhoneOtp(String code) async {
     final current = state.asData?.value;
-    if (current == null || current.firebaseVerificationId.isEmpty) {
+    if (current == null || current.phoneVerificationToken.isEmpty) {
       return null;
     }
 
     state = const AsyncLoading();
     try {
-      final user = await _repository.verifyFirebasePhoneOtp(
-        verificationId: current.firebaseVerificationId,
+      final user = await _repository.verifyPhoneOtp(
+        verificationId: current.phoneVerificationToken,
         code: code,
       );
       state = AsyncData(
         AuthState(
           mobile: current.mobile,
-          firebaseVerificationId: current.firebaseVerificationId,
+          phoneVerificationToken: current.phoneVerificationToken,
           user: user,
         ),
       );
@@ -78,17 +78,17 @@ class AuthController extends StateNotifier<AsyncValue<AuthState>> {
     }
   }
 
-  Future<void> sendEmailOtpLink(String email) async {
+  Future<void> sendEmailOtp(String email) async {
     state = const AsyncLoading();
     try {
-      await _repository.sendEmailOtpLink(email);
+      await _repository.sendEmailOtp(email);
       state = AsyncData(AuthState(email: email));
     } catch (e, st) {
       state = AsyncError(e, st);
     }
   }
 
-  Future<AuthUser?> verifyEmailOtpLink(String emailLink) async {
+  Future<AuthUser?> verifyEmailOtp(String emailLink) async {
     final current = state.asData?.value;
     if (current == null || current.email.isEmpty) {
       return null;
@@ -96,7 +96,7 @@ class AuthController extends StateNotifier<AsyncValue<AuthState>> {
 
     state = const AsyncLoading();
     try {
-      final user = await _repository.verifyEmailOtpLink(
+      final user = await _repository.verifyEmailOtp(
           email: current.email, emailLink: emailLink);
       state = AsyncData(AuthState(email: current.email, user: user));
       return user;
@@ -112,13 +112,13 @@ class AuthState {
     this.mobile = '',
     this.email = '',
     this.debugCode = '',
-    this.firebaseVerificationId = '',
+    this.phoneVerificationToken = '',
     this.user,
   });
 
   final String mobile;
   final String email;
   final String debugCode;
-  final String firebaseVerificationId;
+  final String phoneVerificationToken;
   final AuthUser? user;
 }

@@ -5,13 +5,11 @@ Flutter mobile client for the GMMX MVP.
 ## Overview
 
 This repository contains the mobile app for GMMX, built with Flutter and
-Firebase authentication. The current app boot flow initializes Firebase and
-starts on the OTP request screen.
+backend-driven authentication APIs.
 
 ## Tech Stack
 
 - Flutter (Dart SDK >= 3.4.0 < 4.0.0)
-- Firebase Core + Firebase Auth
 - Riverpod for state management
 - Dio for API networking
 
@@ -32,7 +30,6 @@ mobile/
 			auth/
 				data/
 				presentation/
-		firebase_options.dart
 		main.dart
 ```
 
@@ -40,7 +37,6 @@ mobile/
 
 - Flutter SDK installed
 - Android Studio or Xcode (depending on target platform)
-- A Firebase project configured for this app
 
 ## Environment Configuration
 
@@ -49,15 +45,10 @@ Copy `.env.example` to `.env` and update values as needed:
 ```env
 API_BASE_URL=http://10.0.2.2:8080
 TENANT_SLUG=coachmohan
-FIREBASE_EMAIL_LINK_URL=https://gmmx.app/auth/email-link
-ANDROID_PACKAGE_NAME=com.example.gmmx_mobile
-IOS_BUNDLE_ID=com.example.gmmxMobile
+GOOGLE_SERVER_CLIENT_ID=
 ```
 
-## Firebase Setup
-
-This project uses `lib/firebase_options.dart`. If you are setting up from
-scratch, generate it for your Firebase project using FlutterFire CLI.
+If you later add backend token exchange, set `GOOGLE_SERVER_CLIENT_ID` to the Web OAuth client ID from Google Cloud.
 
 ## Run Locally
 
