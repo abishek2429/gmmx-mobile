@@ -170,7 +170,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildThemeToggle(bool isDark) {
     return GestureDetector(
-      onTap: () => ref.read(themeProvider.notifier).state = !isDark,
+      onTap: () => ref.read(themeModeProvider.notifier).toggle(),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         width: 40,

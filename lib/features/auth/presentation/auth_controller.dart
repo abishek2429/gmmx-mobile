@@ -1,124 +1,192 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../services/mock_auth_service.dart';
+import '../../../services/session_service.dart';
+import '../../../models/user_model.dart';
+import '../../../core/providers/theme_provider.dart';
 
-import '../data/auth_repository.dart';
-
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AsyncValue<AuthState>>((ref) {
-  return AuthController(ref.watch(authRepositoryProvider));
+/// Provides the mock auth service
+final mockAuthServiceProvider = Provider<MockAuthService>((ref) {
+  return MockAuthService();
 });
 
-class AuthController extends StateNotifier<AsyncValue<AuthState>> {
-  AuthController(this._repository) : super(const AsyncData(AuthState()));
+/// Provides the session service
+final sessionServiceProvider = Provider<SessionService>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return SessionService(prefs);
+});
 
-  final AuthRepository _repository;
+/// Auth state
+class AuthState {
+  final String phone;
+  final bool otpSent;
+  final bool isLoading;
+  final bool isVerifying;
+  final UserModel? user;
+  final String? errorMessage;
+  final String mockOtp;
 
-  Future<void> requestBackendOtp(String mobile) async {
-    state = const AsyncLoading();
-    try {
-      final debugCode = await _repository.requestOtp(mobile);
-      state = AsyncData(AuthState(mobile: mobile, debugCode: debugCode));
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
-  }
+  const AuthState({
+    this.phone = '',
+    this.otpSent = false,
+    this.isLoading = false,
+    this.isVerifying = false,
+    this.user,
+    this.errorMessage,
+    this.mockOtp = '123456',
+  });
 
-  Future<AuthUser?> verifyBackendOtp(String code) async {
-    final current = state.asData?.value;
-    if (current == null || current.mobile.isEmpty) {
-      return null;
-    }
-
-    state = const AsyncLoading();
-    try {
-      final user =
-          await _repository.verifyOtp(mobile: current.mobile, code: code);
-      state = AsyncData(AuthState(
-          mobile: current.mobile, debugCode: current.debugCode, user: user));
-      return user;
-    } catch (e, st) {
-      state = AsyncError(e, st);
-      return null;
-    }
-  }
-
-  Future<void> requestPhoneOtp(String mobile) async {
-    state = const AsyncLoading();
-    try {
-      final verificationId = await _repository.requestPhoneOtp(mobile);
-      state = AsyncData(
-          AuthState(mobile: mobile, phoneVerificationToken: verificationId));
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
-  }
-
-  Future<AuthUser?> verifyPhoneOtp(String code) async {
-    final current = state.asData?.value;
-    if (current == null || current.phoneVerificationToken.isEmpty) {
-      return null;
-    }
-
-    state = const AsyncLoading();
-    try {
-      final user = await _repository.verifyPhoneOtp(
-        verificationId: current.phoneVerificationToken,
-        code: code,
-      );
-      state = AsyncData(
-        AuthState(
-          mobile: current.mobile,
-          phoneVerificationToken: current.phoneVerificationToken,
-          user: user,
-        ),
-      );
-      return user;
-    } catch (e, st) {
-      state = AsyncError(e, st);
-      return null;
-    }
-  }
-
-  Future<void> sendEmailOtp(String email) async {
-    state = const AsyncLoading();
-    try {
-      await _repository.sendEmailOtp(email);
-      state = AsyncData(AuthState(email: email));
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
-  }
-
-  Future<AuthUser?> verifyEmailOtp(String emailLink) async {
-    final current = state.asData?.value;
-    if (current == null || current.email.isEmpty) {
-      return null;
-    }
-
-    state = const AsyncLoading();
-    try {
-      final user = await _repository.verifyEmailOtp(
-          email: current.email, emailLink: emailLink);
-      state = AsyncData(AuthState(email: current.email, user: user));
-      return user;
-    } catch (e, st) {
-      state = AsyncError(e, st);
-      return null;
-    }
+  AuthState copyWith({
+    String? phone,
+    bool? otpSent,
+    bool? isLoading,
+    bool? isVerifying,
+    UserModel? user,
+    String? errorMessage,
+    String? mockOtp,
+  }) {
+    return AuthState(
+      phone: phone ?? this.phone,
+      otpSent: otpSent ?? this.otpSent,
+      isLoading: isLoading ?? this.isLoading,
+      isVerifying: isVerifying ?? this.isVerifying,
+      user: user ?? this.user,
+      errorMessage: errorMessage,
+      mockOtp: mockOtp ?? this.mockOtp,
+    );
   }
 }
 
-class AuthState {
-  const AuthState({
-    this.mobile = '',
-    this.email = '',
-    this.debugCode = '',
-    this.phoneVerificationToken = '',
-    this.user,
-  });
+/// Auth controller using mock service
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AuthState>((ref) {
+  return AuthController(
+    ref.watch(mockAuthServiceProvider),
+    ref.watch(sessionServiceProvider),
+  );
+});
 
-  final String mobile;
-  final String email;
-  final String debugCode;
-  final String phoneVerificationToken;
-  final AuthUser? user;
+class AuthController extends StateNotifier<AuthState> {
+  final MockAuthService _authService;
+  final SessionService _sessionService;
+
+  AuthController(this._authService, this._sessionService)
+      : super(const AuthState());
+
+  /// Send OTP to phone number (mocked)
+  Future<void> sendOtp(String phone) async {
+    state = state.copyWith(
+      phone: phone,
+      isLoading: true,
+      errorMessage: null,
+    );
+
+    try {
+      // Simulate network delay
+      await _authService.simulateOtpDelay();
+
+      // Check if user exists
+      final user = await _authService.findUserByPhone(phone);
+      if (user == null) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'No account found with this mobile number',
+        );
+        return;
+      }
+
+      // OTP "sent" successfully
+      state = state.copyWith(
+        isLoading: false,
+        otpSent: true,
+        mockOtp: user.otp,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to send OTP. Please try again.',
+      );
+    }
+  }
+
+  /// Verify OTP and login
+  Future<UserModel?> verifyOtp(String enteredOtp) async {
+    state = state.copyWith(isVerifying: true, errorMessage: null);
+
+    try {
+      await _authService.simulateVerifyDelay();
+
+      final user = await _authService.findUserByPhone(state.phone);
+      if (user == null) {
+        state = state.copyWith(
+          isVerifying: false,
+          errorMessage: 'User not found',
+        );
+        return null;
+      }
+
+      if (!_authService.verifyOtp(user, enteredOtp)) {
+        state = state.copyWith(
+          isVerifying: false,
+          errorMessage: 'Invalid OTP. Try 123456',
+        );
+        return null;
+      }
+
+      // Save session
+      await _sessionService.saveSession(user);
+
+      state = state.copyWith(
+        isVerifying: false,
+        user: user,
+      );
+
+      return user;
+    } catch (e) {
+      state = state.copyWith(
+        isVerifying: false,
+        errorMessage: 'Verification failed. Please try again.',
+      );
+      return null;
+    }
+  }
+
+  /// Simulate Google sign-in (mock)
+  Future<UserModel?> mockGoogleSignIn() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      await _authService.simulateOtpDelay();
+
+      // Default to the owner user for Google sign-in demo
+      final user = await _authService.findUserByEmail('nitheeshmk5@gmail.com');
+      if (user != null) {
+        await _sessionService.saveSession(user);
+        state = state.copyWith(isLoading: false, user: user);
+        return user;
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Google sign-in simulated — no matching account',
+      );
+      return null;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Google sign-in failed',
+      );
+      return null;
+    }
+  }
+
+  /// Logout
+  Future<void> logout() async {
+    await _sessionService.clearSession();
+    state = const AuthState();
+  }
+
+  /// Reset state for new login attempt
+  void reset() {
+    state = const AuthState();
+  }
 }
