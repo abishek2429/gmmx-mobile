@@ -39,7 +39,7 @@ class OwnerShell extends StatelessWidget {
           ),
           FBottomNavigationBarItem(
             icon: Icon(Icons.payments_rounded),
-            label: Text('Plans'),
+            label: Text('Finance'),
           ),
           FBottomNavigationBarItem(
             icon: Icon(Icons.settings_rounded),

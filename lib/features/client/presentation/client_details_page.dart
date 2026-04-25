@@ -1,224 +1,275 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 
 import 'client_list_page.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/services/whatsapp_service.dart';
+import '../../../../core/network/dio_client.dart';
 
-class ClientDetailsPage extends StatelessWidget {
+class ClientDetailsPage extends ConsumerStatefulWidget {
   const ClientDetailsPage({super.key, required this.client});
 
   final Client client;
 
   @override
+  ConsumerState<ClientDetailsPage> createState() => _ClientDetailsPageState();
+}
+
+class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
+  bool _isDeleting = false;
+
+  Future<void> _deleteMember() async {
+    setState(() => _isDeleting = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      final token = await authService.getToken();
+      final dio = ref.read(dioClientProvider);
+
+      await dio.delete('/api/members/${widget.client.id}', options: Options(headers: {'Authorization': 'Bearer $token'}));
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Member deleted successfully', style: TextStyle(color: Colors.white)), backgroundColor: AppColors.success));
+        ref.invalidate(clientListProvider);
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e', style: const TextStyle(color: Colors.white)), backgroundColor: AppColors.error));
+        setState(() => _isDeleting = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [const Color(0xFF0f172a), const Color(0xFF1a0f1f)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: ListView(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      padding: EdgeInsets.zero,
-                    ),
-                    const Text('Member Profile',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600)),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF334155)),
-                      ),
-                      child: const Icon(Icons.more_vert,
-                          color: Color(0xFF94A3B8), size: 20),
-                    ),
-                  ],
-                ),
+        decoration: AppTheme.pageBackground(isDark: isDark),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: AppTheme.foregroundGlow(isDark: isDark),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0x1AFFFFFF),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF334155)),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFF5C73), Color(0xFFFF8FA3)],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
+            ),
+            SafeArea(
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppColors.textPrimary, size: 20),
+                      onPressed: () => context.pop(),
+                    ),
+                    actions: [
+                      if (_isDeleting)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                        )
+                      else
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.more_horiz_rounded, color: isDark ? Colors.white : AppColors.textPrimary),
+                          onSelected: (value) {
+                            if (value == 'delete') _deleteMember();
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'edit', child: Text('Edit Member')),
+                            const PopupMenuItem(value: 'delete', child: Text('Delete Member', style: TextStyle(color: AppColors.error))),
+                          ],
                         ),
-                        child: const Center(
-                          child: Icon(Icons.person, size: 40, color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(client.name,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          client.isActive ? '✓ Active' : '✕ Inactive',
-                          style: TextStyle(
-                            color: client.isActive
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFEF4444),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Overview',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _Card('Attendance', '${client.attendanceCount}'),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _Card('Trainer', client.assignedTrainer),
-                        ),
-                      ],
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildProfileHeader(isDark),
+                          const SizedBox(height: 32),
+                          _buildStatsGrid(isDark),
+                          const SizedBox(height: 32),
+                          _buildContactSection(isDark),
+                          const SizedBox(height: 32),
+                          _buildActions(isDark),
+                          const SizedBox(height: 100),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Contact',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    _InfoTile(Icons.email_outlined, 'Email', client.email),
-                    const SizedBox(height: 8),
-                    _InfoTile(Icons.phone_outlined, 'Phone', client.phone),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _Card extends StatelessWidget {
-  final String label, value;
-  const _Card(this.label, this.value);
+  Widget _buildProfileHeader(bool isDark) {
+    return Column(
+      children: [
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.person_rounded, size: 48, color: Colors.white),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          widget.client.name,
+          style: TextStyle(
+            color: isDark ? Colors.white : AppColors.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: widget.client.isActive 
+                ? AppColors.success.withValues(alpha: 0.1) 
+                : AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            widget.client.isActive ? 'ACTIVE' : 'INACTIVE',
+            style: TextStyle(
+              color: widget.client.isActive ? AppColors.success : AppColors.error,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildStatsGrid(bool isDark) {
+    return Row(
+      children: [
+        Expanded(child: _statCard('ATTENDANCE', widget.client.attendanceCount.toString(), Icons.calendar_today_rounded, isDark)),
+        const SizedBox(width: 16),
+        Expanded(child: _statCard('TRAINER', widget.client.assignedTrainer, Icons.fitness_center_rounded, isDark)),
+      ],
+    );
+  }
+
+  Widget _statCard(String label, String value, IconData icon, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.cardDecoration(isDark: isDark, radius: 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Color(0xFF94A3B8), fontSize: 12)),
-          const SizedBox(height: 8),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700)),
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(height: 16),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
-}
 
-class _InfoTile extends StatelessWidget {
-  final IconData icon;
-  final String label, value;
-  const _InfoTile(this.icon, this.label, this.value);
+  Widget _buildContactSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('CONTACT INFO', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        const SizedBox(height: 16),
+        _contactTile(Icons.email_rounded, 'Email', widget.client.email, isDark),
+        const SizedBox(height: 12),
+        _contactTile(Icons.phone_rounded, 'Phone', widget.client.mobile, isDark),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _contactTile(IconData icon, String label, String value, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0x0AFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.cardDecoration(isDark: isDark, radius: 20),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFFF5C73), size: 20),
-          const SizedBox(width: 12),
+          Icon(icon, color: AppColors.primary.withValues(alpha: 0.5), size: 20),
+          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: Color(0xFF94A3B8), fontSize: 12)),
-              const SizedBox(height: 2),
-              Text(value,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500)),
+              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w700)),
+              Text(value, style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w600)),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActions(bool isDark) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => WhatsappService.sendMessage(phone: widget.client.mobile, message: "Hi ${widget.client.name}!"),
+            icon: const Icon(Icons.chat_bubble_rounded, size: 18),
+            label: const Text('MESSAGE', style: TextStyle(fontWeight: FontWeight.w900)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.edit_rounded, size: 18),
+            label: const Text('EDIT', style: TextStyle(fontWeight: FontWeight.w900)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

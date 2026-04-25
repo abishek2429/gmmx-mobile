@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/presentation/screens/gym_lookup_screen.dart';
+import '../../features/auth/providers/gym_provider.dart';
 
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -11,7 +13,22 @@ import '../../features/dashboard/presentation/shells/owner_shell.dart';
 import '../../features/dashboard/presentation/shells/trainer_shell.dart';
 import '../../features/dashboard/presentation/shells/client_shell.dart';
 import '../../features/dashboard/presentation/screens/placeholder_screen.dart';
+import '../../features/client/presentation/client_list_page.dart';
+import '../../features/trainer/presentation/trainer_list_page.dart';
+import '../../features/client/presentation/client_creation_page.dart';
+import '../../features/trainer/presentation/trainer_creation_page.dart';
+import '../../features/plans/presentation/plans_page.dart';
+import '../../features/profile/presentation/profile_page.dart';
+import '../../features/workout/presentation/workout_plan_page.dart';
+import '../../features/qr_attendance/presentation/attendance_history_page.dart';
+import '../../features/progress/presentation/progress_page.dart';
+import '../../features/qr_attendance/presentation/qr_scanner_page.dart';
+import '../../features/trainer/presentation/trainer_clients_page.dart';
+import '../../features/trainer/presentation/trainer_workout_plans_page.dart';
+import '../../features/payments/presentation/payments_page.dart';
 import '../../services/session_service.dart';
+import '../../features/auth/presentation/auth_controller.dart';
+import '../../models/user_model.dart';
 import '../providers/theme_provider.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -33,33 +50,68 @@ final _clientHistoryKey = GlobalKey<NavigatorState>(debugLabel: 'clientHistory')
 final _clientProgressKey = GlobalKey<NavigatorState>(debugLabel: 'clientProgress');
 final _clientProfileKey = GlobalKey<NavigatorState>(debugLabel: 'clientProfile');
 
+final userProvider = Provider<UserModel?>((ref) {
+  final authUser = ref.watch(authControllerProvider.select((s) => s.user));
+  if (authUser != null) return authUser;
+  return ref.read(sessionServiceProvider).getLoggedInUser();
+});
+
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+  RouterNotifier(this._ref) {
+    _ref.listen(userProvider, (_, __) => notifyListeners());
+    _ref.listen(gymProvider, (_, __) => notifyListeners());
+  }
+}
+
+final routerNotifierProvider = Provider((ref) => RouterNotifier(ref));
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  final sessionService = SessionService(prefs);
+  final notifier = ref.watch(routerNotifierProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
-      final isLoggedIn = sessionService.isLoggedIn;
-      final user = sessionService.getLoggedInUser();
+      final user = ref.read(userProvider);
+      final gymState = ref.read(gymProvider);
+      final isLoggedIn = user != null;
       final currentPath = state.uri.path;
+      final hasGym = gymState.hasValue && gymState.value != null;
 
-      // If logged in and on auth pages, redirect to dashboard
+      // 1. Logged in users: Always force them to their role-based dashboard if on public pages
       if (isLoggedIn && user != null) {
-        if (currentPath == '/' || currentPath == '/login') {
-          return '/${user.normalizedRole}/home';
+        final homePath = '/${user.normalizedRole}/home';
+        if (currentPath == '/' || currentPath == '/login' || currentPath == '/gym-lookup') {
+          return homePath;
         }
       }
 
-      // If not logged in and trying to access dashboard routes, redirect to welcome
-      if (!isLoggedIn && (currentPath.startsWith('/owner') || currentPath.startsWith('/trainer') || currentPath.startsWith('/client'))) {
-        return '/';
+      // 2. Unauthenticated users:
+      if (!isLoggedIn) {
+        // If they try to access a protected route, send them to welcome
+        if (currentPath.startsWith('/owner') ||
+            currentPath.startsWith('/trainer') ||
+            currentPath.startsWith('/client')) {
+          return '/';
+        }
+
+        // If they are on welcome/login but don't have a gym yet, send to lookup
+        // But don't redirect if we are currently loading the gym
+        if (currentPath == '/login' && !hasGym && !gymState.isLoading) {
+          return '/gym-lookup';
+        }
       }
 
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/gym-lookup',
+        name: 'gym-lookup',
+        builder: (context, state) => const GymLookupScreen(),
+      ),
       GoRoute(
         path: '/',
         name: 'welcome',
@@ -90,9 +142,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ----------------------------------------------------
-      // OWNER SHELL
-      // ----------------------------------------------------
+      // ─── OWNER SHELL ───────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return OwnerShell(navigationShell: navigationShell);
@@ -103,9 +153,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/owner/home',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: OwnerDashboard(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: OwnerDashboard()),
               ),
             ],
           ),
@@ -114,12 +163,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/owner/members',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Members',
-                    icon: Icons.people_alt_rounded,
-                  ),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ClientListPage()),
               ),
             ],
           ),
@@ -128,12 +173,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/owner/trainers',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Trainers',
-                    icon: Icons.fitness_center_rounded,
-                  ),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: TrainerListPage()),
               ),
             ],
           ),
@@ -142,12 +183,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/owner/plans',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Plans & Payments',
-                    icon: Icons.payments_rounded,
-                  ),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: PaymentsPage()),
               ),
             ],
           ),
@@ -156,21 +193,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/owner/profile',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Profile & Settings',
-                    icon: Icons.settings_rounded,
-                  ),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ProfilePage()),
               ),
             ],
           ),
         ],
       ),
 
-      // ----------------------------------------------------
-      // TRAINER SHELL
-      // ----------------------------------------------------
+      // ─── TRAINER SHELL ─────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return TrainerShell(navigationShell: navigationShell);
@@ -181,9 +212,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/trainer/home',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: TrainerDashboard(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: TrainerDashboard()),
               ),
             ],
           ),
@@ -193,10 +223,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/trainer/clients',
                 pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Assigned Clients',
-                    icon: Icons.people_alt_rounded,
-                  ),
+                  child: TrainerClientsPage(),
                 ),
               ),
             ],
@@ -207,10 +234,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/trainer/plans',
                 pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Workout Plans',
-                    icon: Icons.assignment_rounded,
-                  ),
+                  child: TrainerWorkoutPlansPage(),
                 ),
               ),
             ],
@@ -221,10 +245,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/trainer/attendance',
                 pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Attendance',
-                    icon: Icons.qr_code_scanner_rounded,
-                  ),
+                  child: QrScannerPage(),
                 ),
               ),
             ],
@@ -234,21 +255,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/trainer/profile',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Profile',
-                    icon: Icons.person_rounded,
-                  ),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ProfilePage()),
               ),
             ],
           ),
         ],
       ),
 
-      // ----------------------------------------------------
-      // CLIENT SHELL
-      // ----------------------------------------------------
+      // ─── CLIENT SHELL ──────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ClientShell(navigationShell: navigationShell);
@@ -259,9 +274,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/client/home',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: ClientDashboard(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ClientDashboard()),
               ),
             ],
           ),
@@ -271,10 +285,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/client/workout',
                 pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Workout Plan',
-                    icon: Icons.fitness_center_rounded,
-                  ),
+                  child: WorkoutPlanPage(),
                 ),
               ),
             ],
@@ -285,10 +296,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/client/history',
                 pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Attendance History',
-                    icon: Icons.calendar_month_rounded,
-                  ),
+                  child: AttendanceHistoryPage(),
                 ),
               ),
             ],
@@ -299,10 +307,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/client/progress',
                 pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Progress Tracking',
-                    icon: Icons.trending_up_rounded,
-                  ),
+                  child: ProgressPage(),
                 ),
               ),
             ],
@@ -312,16 +317,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/client/profile',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: PlaceholderScreen(
-                    title: 'Profile & Trainer',
-                    icon: Icons.person_rounded,
-                  ),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ProfilePage()),
               ),
             ],
           ),
         ],
+      ),
+
+      // ─── Full-screen routes (outside shell — no bottom nav) ────────
+      GoRoute(
+        path: '/owner/members/add',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ClientCreationPage(),
+      ),
+      GoRoute(
+        path: '/owner/trainers/add',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TrainerCreationPage(),
+      ),
+      GoRoute(
+        path: '/scanner',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const QrScannerPage(),
       ),
     ],
   );

@@ -1,13 +1,14 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/services/biometric_service.dart';
+import '../../../../core/services/device_id_service.dart';
+import '../../providers/gym_provider.dart';
 import '../auth_controller.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,639 +17,337 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen>
-    with TickerProviderStateMixin {
-  final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
-  late AnimationController _otpRevealController;
-  late Animation<double> _otpSlideAnimation;
-  late Animation<double> _otpFadeAnimation;
-
-  int _resendCountdown = 0;
-  Timer? _resendTimer;
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _mobileController = TextEditingController();
+  final _pinController = TextEditingController();
+  bool _canBiometric = false;
 
   @override
   void initState() {
     super.initState();
-    _otpRevealController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _otpSlideAnimation = Tween<double>(begin: 30, end: 0).animate(
-      CurvedAnimation(parent: _otpRevealController, curve: Curves.easeOutCubic),
-    );
-    _otpFadeAnimation = CurvedAnimation(
-      parent: _otpRevealController,
-      curve: Curves.easeOutCubic,
-    );
+    _checkBiometrics();
+  }
+
+  void _checkBiometrics() async {
+    final available = await ref.read(biometricServiceProvider).isBiometricAvailable();
+    setState(() => _canBiometric = available);
   }
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _otpController.dispose();
-    _otpRevealController.dispose();
-    _resendTimer?.cancel();
+    _mobileController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
-  void _handleSendOtp() {
-    final phone = _phoneController.text.trim();
-    if (phone.isEmpty || phone.length < 10) {
-      _showFeedback('Please enter a valid 10-digit mobile number', isError: true);
+  void _handleLogin() async {
+    final mobile = _mobileController.text.trim();
+    final pin = _pinController.text.trim();
+    final gym = ref.read(gymProvider).value;
+
+    if (mobile.isEmpty || pin.length < 4 || gym == null) {
+      _showError('Please enter valid mobile and 4-digit PIN');
       return;
     }
 
-    ref.read(authControllerProvider.notifier).sendOtp(phone);
-  }
+    final deviceId = await ref.read(deviceIdServiceProvider).getDeviceId();
 
-  void _handleVerifyOtp() {
-    final otp = _otpController.text.trim();
-    if (otp.isEmpty || otp.length < 6) {
-      _showFeedback('Please enter the 6-digit OTP', isError: true);
-      return;
+    final user = await ref.read(authControllerProvider.notifier).login(
+      gymId: gym.subdomain,
+      identifier: mobile,
+      pin: pin,
+      deviceId: deviceId,
+    );
+
+    if (user != null && mounted) {
+      context.go('/${user.normalizedRole}/home');
     }
-
-    ref.read(authControllerProvider.notifier).verifyOtp(otp).then((user) {
-      if (user != null && mounted) {
-        _showFeedback('Welcome, ${user.fullName}!', isError: false);
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            context.go('/${user.normalizedRole}/home');
-          }
-        });
-      }
-    });
   }
 
-  void _handleGoogleSignIn() {
-    ref.read(authControllerProvider.notifier).mockGoogleSignIn().then((user) {
-      if (user != null && mounted) {
-        _showFeedback('Signed in as ${user.fullName}', isError: false);
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            context.go('/${user.normalizedRole}/home');
-          }
-        });
-      }
-    });
+  void _handleBiometric() async {
+    final authenticated = await ref.read(biometricServiceProvider).authenticate();
+    if (authenticated) {
+      // In a real app, you'd store a secure token for biometric login
+      // For MVP, we'll show a message
+      _showError('Biometric login requires a previous successful PIN login.');
+    }
   }
 
-  void _startResendTimer() {
-    _resendCountdown = 30;
-    _resendTimer?.cancel();
-    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _resendCountdown--;
-        if (_resendCountdown <= 0) timer.cancel();
-      });
-    });
+  void _handleGoogleLogin() async {
+    final user = await ref.read(authControllerProvider.notifier).googleLogin();
+    if (user != null && mounted) {
+      context.go('/${user.normalizedRole}/home');
+    }
   }
 
-  void _autoFillOtp() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        _otpController.text = '123456';
-        setState(() {});
-      }
-    });
-  }
-
-  void _showFeedback(String message, {required bool isError}) {
-    if (!mounted) return;
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError
-                  ? Icons.error_outline_rounded
-                  : Icons.check_circle_outline_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 14)),
-            ),
-          ],
-        ),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
-
-    // Listen for state changes
-    ref.listen<AuthState>(authControllerProvider, (prev, next) {
-      // OTP sent successfully — reveal OTP section
-      if (next.otpSent && !(prev?.otpSent ?? false)) {
-        _otpRevealController.forward();
-        _startResendTimer();
-        _autoFillOtp();
-      }
-
-      // Error handling
-      if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
-        _showFeedback(next.errorMessage!, isError: true);
-      }
-    });
+    final gymState = ref.watch(gymProvider);
+    final authState = ref.watch(authControllerProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () {
-            ref.read(authControllerProvider.notifier).reset();
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-          // Dark mode toggle
-          IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-              size: 22,
-            ),
-            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-
-              // Title
-              Text(
-                'Sign In',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enter your mobile number to continue',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Phone input
-              _buildPhoneInput(isDark, authState),
-
-              // OTP section (revealed after send)
-              _buildOtpSection(isDark, authState),
-
-              const SizedBox(height: 40),
-
-              // OR divider
-              _buildDivider(isDark),
-
-              const SizedBox(height: 24),
-
-              // Google sign-in button
-              _buildGoogleButton(isDark, authState),
-
-              const SizedBox(height: 40),
-
-              // Dev hint
-              Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.secondaryBgDark
-                        : AppColors.secondaryBgLight,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.developer_mode_rounded,
-                        size: 16,
-                        color: AppColors.primary.withOpacity(0.8),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Dev: OTP is 123456',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhoneInput(bool isDark, AuthState authState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Mobile Number',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Phone field with country code
-        Container(
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Country code
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                decoration: BoxDecoration(
-                  border: Border(
-                    right: BorderSide(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  '+91',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              // Phone input
-              Expanded(
-                child: TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  enabled: !authState.otpSent,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
-                  ],
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '9876543210',
-                    hintStyle: TextStyle(
-                      color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                  ),
-                ),
-              ),
-              // Edit button (after OTP sent)
-              if (authState.otpSent)
-                IconButton(
-                  icon: Icon(
-                    Icons.edit_rounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  onPressed: () {
-                    ref.read(authControllerProvider.notifier).reset();
-                    _otpRevealController.reverse();
-                    _otpController.clear();
-                    _resendTimer?.cancel();
-                    setState(() => _resendCountdown = 0);
-                  },
-                ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Send OTP button (hidden after OTP sent)
-        if (!authState.otpSent)
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: FButton(
-              onPress: authState.isLoading ? null : _handleSendOtp,
-              child: authState.isLoading
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : const Text(
-                      'Send OTP',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildOtpSection(bool isDark, AuthState authState) {
-    return AnimatedBuilder(
-      animation: _otpRevealController,
-      builder: (context, child) {
-        if (_otpRevealController.value == 0 && !authState.otpSent) {
-          return const SizedBox.shrink();
-        }
-
-        return Opacity(
-          opacity: _otpFadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, _otpSlideAnimation.value),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 28),
-
-                // Success badge
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.success.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: 16,
-                        color: AppColors.success,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'OTP sent to +91 ${_phoneController.text}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Text(
-                  'Enter OTP',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // OTP input field
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _otpController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 12,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '• • • • • •',
-                      hintStyle: TextStyle(
-                        color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                        letterSpacing: 8,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 18),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Resend link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (_resendCountdown > 0)
-                      Text(
-                        'Resend in ${_resendCountdown}s',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark
-                              ? AppColors.textHintDark
-                              : AppColors.textHint,
-                        ),
-                      )
-                    else
-                      GestureDetector(
-                        onTap: () {
-                          _handleSendOtp();
-                          _startResendTimer();
-                        },
-                        child: const Text(
-                          'Resend OTP',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Verify button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: FButton(
-                    onPress: authState.isVerifying ? null : _handleVerifyOtp,
-                    child: authState.isVerifying
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Text(
-                            'Verify & Login',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDivider(bool isDark) {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-            thickness: 1,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'OR',
-            style: TextStyle(
-              color: isDark ? AppColors.textHintDark : AppColors.textHint,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-            thickness: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoogleButton(bool isDark, AuthState authState) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: authState.isLoading ? null : _handleGoogleSignIn,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          side: BorderSide(
-            color: isDark ? AppColors.borderDark : AppColors.dividerLight,
-            width: 1.5,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Google "G" icon (Material icon fallback)
-            Container(
-              width: 24,
-              height: 24,
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      body: Stack(
+        children: [
+          // ─── Background Glow ───
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              height: 300,
+              width: 300,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(
-                Icons.g_mobiledata,
-                size: 28,
-                color: AppColors.primary,
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
               ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              'Continue with Google',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-              ),
+          ),
+
+          SafeArea(
+            child: gymState.when(
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
+              data: (gym) {
+                if (gym == null) return const SizedBox.shrink();
+                
+                return Column(
+                  children: [
+                    // ─── Header ───
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.arrow_back_ios_new_rounded, 
+                              color: isDark ? Colors.white70 : AppColors.textSecondary,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              ref.read(gymProvider.notifier).clearGym();
+                              context.go('/gym-lookup');
+                            },
+                          ),
+                          const Spacer(),
+                          if (gym.logoUrl != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(gym.logoUrl!, height: 32, width: 32, fit: BoxFit.cover),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            
+                            // ─── Gym Brand ───
+                            if (gym.logoUrl != null)
+                              Container(
+                                height: 100,
+                                width: 100,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  image: DecorationImage(image: NetworkImage(gym.logoUrl!), fit: BoxFit.cover),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.fitness_center_rounded, size: 56, color: AppColors.primary),
+                              ),
+                            
+                            const SizedBox(height: 24),
+                            
+                            Text(
+                              gym.displayName ?? gym.name,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                letterSpacing: -0.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            
+                            const SizedBox(height: 8),
+                            
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Gym ID: ${gym.subdomain}',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 48),
+
+                            // ─── Login Card ───
+                            Container(
+                              padding: const EdgeInsets.all(28),
+                              decoration: AppTheme.glassCard(isDark: isDark, radius: 32),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  TextField(
+                                    controller: _mobileController,
+                                    keyboardType: TextInputType.phone,
+                                    style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary),
+                                    decoration: InputDecoration(
+                                      labelText: 'Mobile Number',
+                                      prefixIcon: const Icon(Icons.phone_iphone_rounded, color: AppColors.primary),
+                                      filled: true,
+                                      fillColor: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  TextField(
+                                    controller: _pinController,
+                                    keyboardType: TextInputType.number,
+                                    obscureText: true,
+                                    style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary),
+                                    inputFormatters: [LengthLimitingTextInputFormatter(4)],
+                                    decoration: InputDecoration(
+                                      labelText: '4-Digit PIN',
+                                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+                                      filled: true,
+                                      fillColor: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  SizedBox(
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed: authState.isVerifying ? null : _handleLogin,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        elevation: 8,
+                                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                                      ),
+                                      child: authState.isVerifying
+                                        ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                                        : const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                                    ),
+                                  ),
+                                  
+                                  if (_canBiometric) ...[
+                                    const SizedBox(height: 20),
+                                    OutlinedButton.icon(
+                                      onPressed: _handleBiometric,
+                                      icon: const Icon(Icons.fingerprint_rounded, size: 24),
+                                      label: const Text('Use Biometrics', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+                                        foregroundColor: AppColors.primary,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      ),
+                                    ),
+                                  ],
+                                  
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    children: [
+                                      Expanded(child: Divider(color: isDark ? Colors.white24 : Colors.black12)),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Text(
+                                          'OR',
+                                          style: TextStyle(
+                                            color: isDark ? Colors.white54 : Colors.black54,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(child: Divider(color: isDark ? Colors.white24 : Colors.black12)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  
+                                  OutlinedButton.icon(
+                                    onPressed: authState.isGoogleVerifying ? null : _handleGoogleLogin,
+                                    icon: Image.network(
+                                      'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
+                                      height: 24,
+                                    ),
+                                    label: const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      side: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                                      foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 40),
+                            
+                            if (authState.errorMessage != null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.error.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                                ),
+                                child: Text(
+                                  authState.errorMessage!,
+                                  style: const TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

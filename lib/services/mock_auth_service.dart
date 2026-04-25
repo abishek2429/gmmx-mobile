@@ -51,7 +51,7 @@ class MockAuthService {
 
   /// Verify OTP (always "123456" in mock mode)
   bool verifyOtp(UserModel user, String enteredOtp) {
-    return user.otp == enteredOtp;
+    return enteredOtp == '123456';
   }
 
   /// Simulate OTP sending delay (feels realistic)

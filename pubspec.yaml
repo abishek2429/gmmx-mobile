@@ -28,6 +28,9 @@ dependencies:
   riverpod_annotation: ^2.3.5
   forui: ^0.18.0
   shared_preferences: ^2.3.0
+  mobile_scanner: ^7.2.0
+  local_auth: ^2.3.0
+  device_info_plus: ^10.1.0
 
 dev_dependencies:
   flutter_test:

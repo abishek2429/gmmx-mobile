@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 
 import 'client_creation_page.dart';
 import 'client_details_page.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/services/whatsapp_service.dart';
 
-// Mock client model
+// Client model
 class Client {
   final String id;
   final String name;
   final String email;
-  final String phone;
+  final String mobile;
   final String assignedTrainer;
   final DateTime joinedAt;
   final int attendanceCount;
@@ -19,7 +27,7 @@ class Client {
     required this.id,
     required this.name,
     required this.email,
-    required this.phone,
+    required this.mobile,
     required this.assignedTrainer,
     required this.joinedAt,
     required this.attendanceCount,
@@ -27,39 +35,33 @@ class Client {
   });
 }
 
-final clientListProvider = StateProvider<List<Client>>((ref) {
-  return [
-    Client(
-      id: '1',
-      name: 'John Doe',
-      email: 'john@email.com',
-      phone: '9876543210',
-      assignedTrainer: 'Rajesh Kumar',
-      joinedAt: DateTime.now().subtract(const Duration(days: 60)),
-      attendanceCount: 24,
-      isActive: true,
-    ),
-    Client(
-      id: '2',
-      name: 'Sarah Smith',
-      email: 'sarah@email.com',
-      phone: '9876543211',
-      assignedTrainer: 'Priya Singh',
-      joinedAt: DateTime.now().subtract(const Duration(days: 45)),
-      attendanceCount: 18,
-      isActive: true,
-    ),
-    Client(
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@email.com',
-      phone: '9876543212',
-      assignedTrainer: 'Amit Patel',
-      joinedAt: DateTime.now().subtract(const Duration(days: 30)),
-      attendanceCount: 12,
-      isActive: false,
-    ),
-  ];
+final clientListProvider = FutureProvider<List<Client>>((ref) async {
+  final dio = ref.read(dioClientProvider);
+  final authService = ref.read(authServiceProvider);
+  final token = await authService.getToken();
+
+  final response = await dio.get(
+    '/api/members',
+    options: Options(headers: {'Authorization': 'Bearer $token'}),
+  );
+
+  if (response.statusCode == 200) {
+    final List data = response.data['data']['content'] ?? []; // Page response
+    return data.map((json) {
+      return Client(
+        id: json['id'] ?? '',
+        name: json['fullName'] ?? 'No Name',
+        email: json['email'] ?? '',
+        mobile: json['mobile'] ?? '',
+        assignedTrainer: json['assignedTrainerId'] ?? 'Unassigned',
+        joinedAt: json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : DateTime.now(),
+        attendanceCount: 0,
+        isActive: json['isActive'] ?? true,
+      );
+    }).toList();
+  } else {
+    throw Exception('Failed to load members');
+  }
 });
 
 class ClientListPage extends ConsumerWidget {
@@ -67,245 +69,269 @@ class ClientListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final clients = ref.watch(clientListProvider);
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final clientsAsync = ref.watch(clientListProvider);
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF0f172a),
-              const Color(0xFF1a0f1f),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        foregroundDecoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.transparent,
-              const Color(0xFFFF5C73).withValues(alpha: 0.06),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        decoration: AppTheme.pageBackground(isDark: isDark),
+        child: Stack(
+          children: [
+            // Background Glow
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: AppTheme.foregroundGlow(isDark: isDark),
+              ),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Members',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Members',
+                                  style: TextStyle(
+                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Manage gym members',
+                                  style: TextStyle(
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Manage gym members',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 14,
+                            GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: AppTheme.glassButton(isDark: isDark),
+                                child: Icon(
+                                  Icons.filter_list_rounded,
+                                  color: AppColors.primary,
+                                  size: 22,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF334155),
-                              width: 1,
+                        const SizedBox(height: 20),
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search members...',
+                            hintStyle: TextStyle(
+                              color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                            ),
+                            filled: true,
+                            fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: AppColors.primary,
+                                width: 1.5,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
                           ),
-                          child: const Icon(
-                            Icons.filter_list,
-                            color: Color(0xFFFF5C73),
-                            size: 24,
+                          style: TextStyle(
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search members...',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF64748B),
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Color(0xFF64748B),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFF1E293B),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF334155),
-                            width: 1,
+                  ),
+
+                  // Content based on AsyncValue
+                  Expanded(
+                    child: clientsAsync.when(
+                      data: (clients) => Column(
+                        children: [
+                          // Stats Row
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _StatCard(
+                                    label: 'Total',
+                                    value: clients.length.toString(),
+                                    icon: Icons.people_outline_rounded,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _StatCard(
+                                    label: 'Active',
+                                    value: clients.where((c) => c.isActive).length.toString(),
+                                    icon: Icons.check_circle_outline_rounded,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _StatCard(
+                                    label: 'Avg Attn',
+                                    value: clients.isEmpty ? "0" : (clients.fold<int>(0, (sum, c) => sum + c.attendanceCount) / clients.length).toStringAsFixed(0),
+                                    icon: Icons.analytics_outlined,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      style: const TextStyle(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
-              // Stats Row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        label: 'Total Members',
-                        value: clients.length.toString(),
-                        icon: Icons.people_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        label: 'Active',
-                        value: clients.where((c) => c.isActive).length.toString(),
-                        icon: Icons.check_circle_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        label: 'Avg Attendance',
-                        value: (clients.fold<int>(0, (sum, c) => sum + c.attendanceCount) / clients.length).toStringAsFixed(0),
-                        icon: Icons.check_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                          const SizedBox(height: 24),
 
-              const SizedBox(height: 20),
-
-              // Client List
-              Expanded(
-                child: clients.isEmpty
-                    ? Center(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1E3A5F).withValues(
-                                    alpha: 0.4,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFF3B82F6)
-                                        .withValues(alpha: 0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      Icon(
-                                        Icons.people_outline,
-                                        size: 48,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.3,
-                                        ),
+                          // Client List
+                          Expanded(
+                            child: clients.isEmpty
+                                ? Center(
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(32),
+                                            margin: const EdgeInsets.all(24),
+                                            decoration: AppTheme.cardDecoration(isDark: isDark),
+                                            child: Column(
+                                              children: [
+                                                Icon(
+                                                  Icons.people_outline_rounded,
+                                                  size: 64,
+                                                  color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                                ),
+                                                const SizedBox(height: 20),
+                                                Text(
+                                                  'No members yet',
+                                                  style: TextStyle(
+                                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'Add your first member to get started',
+                                                  style: TextStyle(
+                                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                                    fontSize: 14,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 16),
-                                      const Text(
-                                        'No members yet',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      const Text(
-                                        'Add your first member to get started',
-                                        style: TextStyle(
-                                          color: Color(0xFFB0B9C1),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
+                                    ),
+                                  )
+                                : RefreshIndicator(
+                                    onRefresh: () => ref.refresh(clientListProvider.future),
+                                    color: AppColors.primary,
+                                    child: ListView.builder(
+                                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                                      itemCount: clients.length,
+                                      itemBuilder: (context, index) {
+                                        final client = clients[index];
+                                        return ClientCard(
+                                          client: client,
+                                          isDark: isDark,
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => ClientDetailsPage(
+                                                  client: client,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: clients.length,
-                        itemBuilder: (context, index) {
-                          final client = clients[index];
-                          return ClientCard(
-                            client: client,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => ClientDetailsPage(
-                                    client: client,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                        ],
                       ),
+                      loading: () => Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                      error: (error, stack) => Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                            const SizedBox(height: 16),
+                            Text('Error: $error', 
+                              style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
+                              textAlign: TextAlign.center,
+                            ),
+                            TextButton(
+                              onPressed: () => ref.refresh(clientListProvider),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const ClientCreationPage(),
-            ),
-          );
-        },
-        backgroundColor: const Color(0xFFFF5C73),
+        onPressed: () => context.push('/owner/members/add'),
+        backgroundColor: AppColors.primary,
+        elevation: 8,
         label: const Text(
           'Add Member',
           style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
         icon: const Icon(
-          Icons.add,
+          Icons.add_rounded,
           color: Colors.white,
         ),
       ),
@@ -318,24 +344,19 @@ class _StatCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.icon,
+    required this.isDark,
   });
 
   final String label;
   final String value;
   final IconData icon;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF334155),
-          width: 1,
-        ),
-      ),
+      decoration: AppTheme.cardDecoration(isDark: isDark, radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -344,26 +365,27 @@ class _StatCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
+                style: TextStyle(
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                   fontSize: 10,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
               ),
               Icon(
                 icon,
-                color: const Color(0xFFFF5C73),
-                size: 16,
+                color: AppColors.primary,
+                size: 14,
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
+            style: TextStyle(
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -377,26 +399,21 @@ class ClientCard extends StatelessWidget {
     super.key,
     required this.client,
     required this.onTap,
+    required this.isDark,
   });
 
   final Client client;
   final VoidCallback onTap;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0x1AFFFFFF),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF334155),
-            width: 1,
-          ),
-        ),
+        decoration: AppTheme.cardDecoration(isDark: isDark, radius: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -409,65 +426,88 @@ class ClientCard extends StatelessWidget {
                     children: [
                       Text(
                         client.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: TextStyle(
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Trainer: ${client.assignedTrainer}',
-                        style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 12,
-                        ),
+                      Row(
+                        children: [
+                          Icon(Icons.fitness_center_rounded, size: 12, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            client.assignedTrainer,
+                            style: TextStyle(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                GestureDetector(
+                  onTap: () => WhatsappService.sendMessage(
+                    phone: client.mobile,
+                    message: "Hi ${client.name}! This is GMMX Gym. How are you doing today? 💪",
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.chat_bubble_rounded, color: AppColors.success, size: 20),
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
                     color: client.isActive
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                        : const Color(0xFFEF4444).withValues(alpha: 0.15),
+                        ? AppColors.success.withValues(alpha: 0.12)
+                        : AppColors.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     client.isActive ? 'Active' : 'Inactive',
                     style: TextStyle(
                       color: client.isActive
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                          ? (isDark ? AppColors.successDark : AppColors.success)
+                          : (isDark ? AppColors.errorDark : AppColors.error),
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: _MiniStat(
                     label: 'Attendance',
                     value: '${client.attendanceCount}',
-                    icon: Icons.check_outlined,
+                    icon: Icons.event_available_rounded,
+                    isDark: isDark,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _MiniStat(
                     label: 'Joined',
-                    value: '${client.joinedAt.day}/${client.joinedAt.month}',
-                    icon: Icons.calendar_today_outlined,
+                    value: '${client.joinedAt.day}/${client.joinedAt.month}/${client.joinedAt.year}',
+                    icon: Icons.event_available_rounded,
+                    isDark: isDark,
                   ),
                 ),
               ],
@@ -484,45 +524,48 @@ class _MiniStat extends StatelessWidget {
     required this.label,
     required this.value,
     required this.icon,
+    required this.isDark,
   });
 
   final String label;
   final String value;
   final IconData icon;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(8),
+        color: isDark ? AppColors.secondaryBgDark : AppColors.surfaceElevatedLight,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
           Icon(
             icon,
-            size: 12,
-            color: const Color(0xFFFF5C73),
+            size: 14,
+            color: AppColors.primary,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
+                  style: TextStyle(
+                    color: isDark ? AppColors.textHintDark : AppColors.textHint,
                     fontSize: 9,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],

@@ -181,7 +181,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   width: double.infinity,
                   height: 56,
                   child: FButton(
-                    onPress: () => context.push('/login'),
+                    onPress: () => context.push('/gym-lookup'),
                     child: const Text(
                       'Get Started',
                       style: TextStyle(

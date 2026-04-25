@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 
 import 'client_list_page.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/providers/theme_provider.dart';
 
 class ClientCreationPage extends ConsumerStatefulWidget {
   const ClientCreationPage({super.key});
@@ -40,244 +47,287 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
 
     setState(() => isLoading = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        final newClient = Client(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: nameController.text,
-          email: emailController.text,
-          phone: phoneController.text,
-          assignedTrainer: selectedTrainer!,
-          joinedAt: DateTime.now(),
-          attendanceCount: 0,
-          isActive: true,
+    Future.microtask(() async {
+      try {
+        final authService = ref.read(authServiceProvider);
+        final token = await authService.getToken();
+        
+        if (token == null) throw Exception('Not authenticated');
+
+        final dio = ref.read(dioClientProvider);
+        
+        final response = await dio.post('/api/members', 
+          data: {
+            'fullName': nameController.text,
+            'email': emailController.text,
+            'mobile': phoneController.text,
+          },
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
 
-        ref.read(clientListProvider.notifier).state = [
-          ...ref.read(clientListProvider),
-          newClient,
-        ];
-
-        Navigator.of(context).pop();
+        if (mounted) {
+          // ignore: unused_result
+          ref.refresh(clientListProvider);
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => isLoading = false);
+          String errorMessage = e.toString();
+          if (e is DioException && e.response?.data != null) {
+            errorMessage = e.response?.data['message'] ?? e.response?.data.toString() ?? e.toString();
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to add member: $errorMessage'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF0f172a),
-              const Color(0xFF1a0f1f),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Add New Member',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Register a new member to the gym',
-                    style: TextStyle(
-                      color: Color(0xFFB0B9C1),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+        decoration: AppTheme.pageBackground(isDark: isDark),
+        child: Stack(
+          children: [
+            // Background Glow
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: AppTheme.foregroundGlow(isDark: isDark),
               ),
-              const SizedBox(height: 32),
-              Form(
-                key: formKey,
-                child: Column(
-                  children: [
-                    _FormField(
-                      label: 'Full Name',
-                      hintText: 'e.g., John Doe',
-                      icon: Icons.person_outline,
-                      controller: nameController,
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) return 'Name is required';
-                        if ((value?.length ?? 0) < 3) return 'Min 3 characters';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _FormField(
-                      label: 'Email',
-                      hintText: 'e.g., john@email.com',
-                      icon: Icons.email_outlined,
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) return 'Email is required';
-                        if (!RegExp(
-                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-                            .hasMatch(value ?? '')) {
-                          return 'Invalid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _FormField(
-                      label: 'Phone',
-                      hintText: 'e.g., 9876543210',
-                      icon: Icons.phone_outlined,
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) return 'Phone is required';
-                        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value ?? '')) {
-                          return 'Invalid phone';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    child: Row(
                       children: [
-                        const Text(
-                          'Assigned Trainer',
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                            size: 20,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Step 1 of 1',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                      ],
+                    ),
+                  ),
+                  
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      children: [
+                        const SizedBox(height: 10),
+                        Text(
+                          'Add New Member',
+                          style: TextStyle(
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF334155),
-                              width: 1,
-                            ),
+                        Text(
+                          'Register a new member to the gym',
+                          style: TextStyle(
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                            fontSize: 15,
                           ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedTrainer,
-                              isExpanded: true,
-                              hint: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: const Text(
-                                  'Select trainer',
-                                  style: TextStyle(
-                                    color: Color(0xFF64748B),
+                        ),
+                        const SizedBox(height: 40),
+                        Form(
+                          key: formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _FormField(
+                                label: 'Full Name',
+                                hintText: 'e.g., John Doe',
+                                icon: Icons.person_outline_rounded,
+                                controller: nameController,
+                                isDark: isDark,
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) return 'Name is required';
+                                  if ((value?.length ?? 0) < 3) return 'Min 3 characters';
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              _FormField(
+                                label: 'Email Address',
+                                hintText: 'e.g., john@email.com',
+                                icon: Icons.alternate_email_rounded,
+                                controller: emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                isDark: isDark,
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) return 'Email is required';
+                                  if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value ?? '')) {
+                                    return 'Invalid email format';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              _FormField(
+                                label: 'Phone Number',
+                                hintText: 'e.g., 9876543210',
+                                icon: Icons.phone_android_rounded,
+                                controller: phoneController,
+                                keyboardType: TextInputType.phone,
+                                isDark: isDark,
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) return 'Phone is required';
+                                  if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value ?? '')) {
+                                    return 'Invalid 10-digit phone number';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                'Assigned Trainer',
+                                style: TextStyle(
+                                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selectedTrainer,
+                                    isExpanded: true,
+                                    hint: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      child: Text(
+                                        'Select trainer',
+                                        style: TextStyle(
+                                          color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                        ),
+                                      ),
+                                    ),
+                                    onChanged: (value) {
+                                      setState(() => selectedTrainer = value);
+                                    },
+                                    items: trainers
+                                        .map((trainer) => DropdownMenuItem<String>(
+                                              value: trainer,
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                child: Text(
+                                                  trainer,
+                                                  style: TextStyle(
+                                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ))
+                                        .toList(),
+                                    dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
                               ),
-                              onChanged: (value) {
-                                setState(
-                                    () => selectedTrainer = value);
-                              },
-                              items: trainers
-                                  .map((trainer) =>
-                                      DropdownMenuItem<String>(
-                                        value: trainer,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                          ),
-                                          child: Text(
-                                            trainer,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
+                              const SizedBox(height: 40),
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.info.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.info.withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.info_outline_rounded, color: AppColors.info, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Member will use their mobile number and a default PIN (1234) to access their mobile app. They can change it later in their profile.',
+                                        style: TextStyle(
+                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                          fontSize: 12,
+                                          height: 1.5,
                                         ),
-                                      ))
-                                  .toList(),
-                              dropdownColor: const Color(0xFF1E293B),
-                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                              FilledButton(
+                                onPressed: isLoading ? null : handleCreateClient,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  minimumSize: const Size(double.infinity, 56),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 4,
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Create Account',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(height: 40),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A5F).withValues(
-                          alpha: 0.4,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        '✓ Member will be linked to selected trainer\n✓ Can participate in attendance tracking\n✓ Access to assigned plans and programs',
-                        style: TextStyle(
-                          color: Color(0xFFADD7F6),
-                          fontSize: 12,
-                          height: 1.6,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    FilledButton(
-                      onPressed: isLoading ? null : handleCreateClient,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF5C73),
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : const Text(
-                              'Add Member',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -291,6 +341,7 @@ class _FormField extends StatefulWidget {
     required this.icon,
     required this.controller,
     required this.validator,
+    required this.isDark,
     this.keyboardType = TextInputType.text,
   });
 
@@ -300,6 +351,7 @@ class _FormField extends StatefulWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
+  final bool isDark;
 
   @override
   State<_FormField> createState() => _FormFieldState();
@@ -334,48 +386,64 @@ class _FormFieldState extends State<_FormField> {
       children: [
         Text(
           widget.label,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: widget.isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
             fontSize: 14,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         TextFormField(
           controller: widget.controller,
           focusNode: _focusNode,
           keyboardType: widget.keyboardType,
           decoration: InputDecoration(
             hintText: widget.hintText,
-            hintStyle: const TextStyle(color: Color(0xFF64748B)),
+            hintStyle: TextStyle(color: widget.isDark ? AppColors.textHintDark : AppColors.textHint),
             prefixIcon: Icon(
               widget.icon,
-              color: isFocused
-                  ? const Color(0xFFFF5C73)
-                  : const Color(0xFF64748B),
-              size: 20,
+              color: isFocused ? AppColors.primary : (widget.isDark ? AppColors.textHintDark : AppColors.textHint),
+              size: 22,
             ),
             filled: true,
-            fillColor: const Color(0xFF1E293B),
+            fillColor: widget.isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF334155),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: widget.isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: widget.isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: Color(0xFFFF5C73),
-                width: 2,
+                color: AppColors.primary,
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: widget.isDark ? AppColors.errorDark : AppColors.error,
+                width: 1,
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 14,
+              vertical: 16,
             ),
           ),
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: widget.isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+            fontSize: 15,
+          ),
           validator: widget.validator,
         ),
       ],
