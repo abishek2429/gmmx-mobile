@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/gym_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -116,12 +117,21 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
                   
                   // ─── Logo/Icon ───
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: Colors.white,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.fitness_center_rounded, size: 48, color: AppColors.primary),
+                    child: Image.asset(
+                      'assets/images/logo-trans.png',
+                      height: 64,
+                    ),
                   ),
                   
                   const SizedBox(height: 32),
@@ -236,8 +246,8 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
                         style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
                       ),
                       TextButton(
-                        onPressed: () => _showContactSales(),
-                        child: const Text('Contact Sales', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                        onPressed: () => _openRegisterLink(),
+                        child: const Text('Register', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -263,12 +273,17 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
     );
   }
 
-  void _showContactSales() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please use dashboard.gmmx.app/signup to register a new gym.'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+  void _openRegisterLink() async {
+    final url = Uri.parse('https://gmmx.app');
+    // Try to launch directly, fallback to SnackBar if it fails
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open register link: $e')),
+        );
+      }
+    }
   }
 }

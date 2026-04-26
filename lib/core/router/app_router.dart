@@ -30,6 +30,7 @@ import '../../services/session_service.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../models/user_model.dart';
 import '../providers/theme_provider.dart';
+import '../../features/admin/presentation/super_admin_dashboard.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _ownerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'ownerHome');
@@ -92,9 +93,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // 2. Unauthenticated users:
       if (!isLoggedIn) {
         // If they try to access a protected route, send them to welcome
-        if (currentPath.startsWith('/owner') ||
-            currentPath.startsWith('/trainer') ||
-            currentPath.startsWith('/client')) {
+        if (currentPath.contains('/owner') ||
+            currentPath.contains('/trainer') ||
+            currentPath.contains('/client') ||
+            currentPath.contains('/admin')) {
           return '/';
         }
 
@@ -329,6 +331,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ],
               ),
             ],
+          ),
+          
+          // ─── ADMIN DASHBOARD ──────────────────────────────────────────
+          GoRoute(
+            path: 'admin',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: SuperAdminDashboard()),
           ),
         ],
       ),

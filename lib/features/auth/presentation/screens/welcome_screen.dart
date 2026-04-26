@@ -136,22 +136,39 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                                   ),
                                 ],
                               ),
-                              child: Image.network(
-                                'https://api.gmmx.app/logo-gmmx.png',
+                              child: Image.asset(
+                                'assets/images/logo-trans.png',
                                 height: 60,
                                 errorBuilder: (context, error, stackTrace) =>
                                     const Icon(Icons.fitness_center,
                                         size: 40, color: AppColors.primary),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Column(
+                          children: [
                             const Text(
-                              'GMMX',
+                              'Gmmx',
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -1,
                                 color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Gym Management System',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                                color: isDark ? Colors.white70 : Colors.black54,
                               ),
                             ),
                           ],
@@ -285,21 +302,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildDot(isDark),
-                              const SizedBox(width: 8),
-                              Text(
-                                'SaaS Edition 2026',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary.withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                       const SizedBox(height: 32),

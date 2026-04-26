@@ -47,6 +47,7 @@ class UserModel {
     if (r == 'member' || r == 'client') return 'client';
     if (r == 'owner') return 'owner';
     if (r == 'trainer') return 'trainer';
+    if (r == 'super_admin') return 'admin';
     return r;
   }
 

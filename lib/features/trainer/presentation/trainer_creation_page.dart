@@ -23,6 +23,7 @@ class _TrainerCreationPageState extends ConsumerState<TrainerCreationPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
+  final pinController = TextEditingController(text: '1234');
   String? selectedSpecialization;
   bool isLoading = false;
 
@@ -40,6 +41,7 @@ class _TrainerCreationPageState extends ConsumerState<TrainerCreationPage> {
     nameController.dispose();
     emailController.dispose();
     phoneController.dispose();
+    pinController.dispose();
     super.dispose();
   }
 
@@ -68,7 +70,7 @@ class _TrainerCreationPageState extends ConsumerState<TrainerCreationPage> {
             'email': emailController.text,
             'mobile': phoneController.text, // Backend expects 'mobile' in UserAccount
             'specialization': selectedSpecialization!,
-            'pin': '1234',
+            'pin': pinController.text,
           },
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
@@ -209,6 +211,20 @@ class _TrainerCreationPageState extends ConsumerState<TrainerCreationPage> {
                                   return null;
                                 },
                               ),
+                              const SizedBox(height: 20),
+                              _FormField(
+                                label: 'Initial PIN',
+                                hintText: 'e.g., 1234',
+                                icon: Icons.lock_outline_rounded,
+                                controller: pinController,
+                                keyboardType: TextInputType.number,
+                                isDark: isDark,
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) return 'PIN is required';
+                                  if (value!.length < 4) return 'Min 4 digits';
+                                  return null;
+                                },
+                              ),
                               const SizedBox(height: 24),
                               Text(
                                 'Specialization',
@@ -280,7 +296,7 @@ class _TrainerCreationPageState extends ConsumerState<TrainerCreationPage> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        'Trainer will be granted access to manage clients and track attendance.',
+                                        'Trainer will be granted access to manage clients and track attendance. They should change their PIN after first login.',
                                         style: TextStyle(
                                           color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                                           fontSize: 12,

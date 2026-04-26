@@ -46,7 +46,11 @@ class AuthService {
 
   Future<UserModel?> loginWithGoogle() async {
     try {
+      // On Web, the clientId is mandatory.
+      // On Android/iOS, serverClientId is needed to get the idToken for backend exchange.
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: '569266698773-uo2106moohqafqn6o5of5a150nqocpl3.apps.googleusercontent.com',
+        serverClientId: '569266698773-uo2106moohqafqn6o5of5a150nqocpl3.apps.googleusercontent.com',
         scopes: ['email'],
       );
       
@@ -59,7 +63,7 @@ class AuthService {
       final String? idToken = googleAuth.idToken;
 
       if (idToken == null) {
-        throw Exception('Failed to get Google ID Token.');
+        throw Exception('Failed to get Google ID Token. Please ensure Google Sign-In is correctly configured in Google Cloud Console.');
       }
 
       final response = await _dio.post('/auth/google', data: {
