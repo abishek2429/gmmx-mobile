@@ -330,7 +330,11 @@ class _PlanStatusCard extends StatelessWidget {
           ),
           if (plan != GymPlan.pro)
             GestureDetector(
-              onTap: () => context.push('/owner/plans'),
+              onTap: () {
+                final gym = ref.read(gymProvider).value;
+                final slug = gym?.subdomain ?? 'dashboard';
+                context.push('/$slug/owner/plans');
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(

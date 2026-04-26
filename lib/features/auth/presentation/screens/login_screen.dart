@@ -61,7 +61,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
 
     if (user != null && mounted) {
-      context.go('/${user.normalizedRole}/home');
+      final slug = gym?.subdomain ?? 'dashboard';
+      context.go('/$slug/${user.normalizedRole}');
     }
   }
 
@@ -77,7 +78,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _handleGoogleLogin() async {
     final user = await ref.read(authControllerProvider.notifier).googleLogin();
     if (user != null && mounted) {
-      context.go('/${user.normalizedRole}/home');
+      final gym = ref.read(gymProvider).value;
+      final slug = gym?.subdomain ?? 'dashboard';
+      context.go('/$slug/${user.normalizedRole}');
     }
   }
 
