@@ -328,6 +328,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ],
               ),
             ],
+          ),
+        ],
       ),
 
       // ─── Full-screen routes (outside shell — no bottom nav) ────────
