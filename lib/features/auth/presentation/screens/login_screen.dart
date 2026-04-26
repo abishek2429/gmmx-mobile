@@ -21,6 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _mobileController = TextEditingController();
   final _pinController = TextEditingController();
   bool _canBiometric = false;
+  LoginMethod _selectedLoginMethod = LoginMethod.pin;
 
   @override
   void initState() {
@@ -60,11 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
 
     if (user != null && mounted) {
-      if (user.normalizedRole == 'owner' && gym != null) {
-        context.go('/${gym.subdomain}/dashboard');
-      } else {
-        context.go('/${user.normalizedRole}/home');
-      }
+      context.go('/${user.normalizedRole}/home');
     }
   }
 
@@ -80,12 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _handleGoogleLogin() async {
     final user = await ref.read(authControllerProvider.notifier).googleLogin();
     if (user != null && mounted) {
-      final gym = ref.read(gymProvider).value;
-      if (user.normalizedRole == 'owner' && gym != null) {
-        context.go('/${gym.subdomain}/dashboard');
-      } else {
-        context.go('/${user.normalizedRole}/home');
-      }
+      context.go('/${user.normalizedRole}/home');
     }
   }
 
@@ -243,6 +235,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 20),
+                                  SegmentedButton<LoginMethod>(
+                                    segments: const <ButtonSegment<LoginMethod>>[
+                                      ButtonSegment<LoginMethod>(
+                                        value: LoginMethod.pin,
+                                        label: Text('PIN Login'),
+                                        icon: Icon(Icons.pin),
+                                      ),
+                                      ButtonSegment<LoginMethod>(
+                                        value: LoginMethod.google,
+                                        label: Text('Google Login'),
+                                        icon: Icon(Icons.g_mobiledata_rounded),
+                                      ),
+                                    ],
+                                    selected: <LoginMethod>{_selectedLoginMethod},
+                                    onSelectionChanged: (selection) {
+                                      setState(() {
+                                        _selectedLoginMethod = selection.first;
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 20),
+                                  if (_selectedLoginMethod == LoginMethod.pin) ...[
                                   TextField(
                                     controller: _pinController,
                                     keyboardType: TextInputType.number,
@@ -277,7 +291,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         : const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                                     ),
                                   ),
-                                  
                                   if (_canBiometric) ...[
                                     const SizedBox(height: 20),
                                     OutlinedButton.icon(
@@ -292,7 +305,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       ),
                                     ),
                                   ],
-                                  
+                                  ] else ...[
+                                  SizedBox(
+                                    height: 56,
+                                    child: OutlinedButton.icon(
+                                      onPressed: authState.isGoogleVerifying ? null : _handleGoogleLogin,
+                                      icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
+                                      label: const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        side: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                                        foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      ),
+                                    ),
+                                  ),
+                                  ],
                                   const SizedBox(height: 24),
                                   Row(
                                     children: [
@@ -315,10 +343,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   
                                   OutlinedButton.icon(
                                     onPressed: authState.isGoogleVerifying ? null : _handleGoogleLogin,
-                                    icon: Image.network(
-                                      'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
-                                      height: 24,
-                                    ),
+                                    icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
                                     label: const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.bold)),
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -361,3 +386,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
+
+enum LoginMethod { pin, google }

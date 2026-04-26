@@ -82,7 +82,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // 1. Logged in users: Always force them to their role-based dashboard if on public pages
       if (isLoggedIn && user != null) {
-        final homePath = '/${user.normalizedRole}/home';
+        final slug = gymState.value?.subdomain ?? 'dashboard';
+        final homePath = '/$slug/${user.normalizedRole}';
         if (currentPath == '/' || currentPath == '/login' || currentPath == '/gym-lookup') {
           return homePath;
         }
@@ -152,7 +153,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _ownerHomeKey,
             routes: [
               GoRoute(
-                path: '/owner/home',
+                path: '/:slug/owner',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: OwnerDashboard()),
               ),
@@ -162,7 +163,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _ownerMembersKey,
             routes: [
               GoRoute(
-                path: '/owner/members',
+                path: '/:slug/owner/members',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ClientListPage()),
               ),
@@ -172,7 +173,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _ownerTrainersKey,
             routes: [
               GoRoute(
-                path: '/owner/trainers',
+                path: '/:slug/owner/trainers',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: TrainerListPage()),
               ),
@@ -182,7 +183,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _ownerPlansKey,
             routes: [
               GoRoute(
-                path: '/owner/plans',
+                path: '/:slug/owner/plans',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: PaymentsPage()),
               ),
@@ -192,7 +193,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _ownerProfileKey,
             routes: [
               GoRoute(
-                path: '/owner/profile',
+                path: '/:slug/owner/profile',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ProfilePage()),
               ),
@@ -211,7 +212,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _trainerHomeKey,
             routes: [
               GoRoute(
-                path: '/trainer/home',
+                path: '/:slug/trainer',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: TrainerDashboard()),
               ),
@@ -221,7 +222,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _trainerClientsKey,
             routes: [
               GoRoute(
-                path: '/trainer/clients',
+                path: '/:slug/trainer/clients',
                 pageBuilder: (context, state) => const NoTransitionPage(
                   child: TrainerClientsPage(),
                 ),
@@ -254,7 +255,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _trainerProfileKey,
             routes: [
               GoRoute(
-                path: '/trainer/profile',
+                path: '/:slug/trainer/profile',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ProfilePage()),
               ),
@@ -273,7 +274,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _clientHomeKey,
             routes: [
               GoRoute(
-                path: '/client/home',
+                path: '/:slug/client',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ClientDashboard()),
               ),
@@ -316,7 +317,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             navigatorKey: _clientProfileKey,
             routes: [
               GoRoute(
-                path: '/client/profile',
+                path: '/:slug/client/profile',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ProfilePage()),
               ),

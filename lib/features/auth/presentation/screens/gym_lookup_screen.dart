@@ -85,7 +85,7 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    final isDark = ref.watch(themeProvider);
     final theme = Theme.of(context);
     
     return Scaffold(
@@ -232,12 +232,12 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Don\'t have a gym ID?',
+                        'Need a new gym workspace?',
                         style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
                       ),
                       TextButton(
-                        onPressed: () => context.push('/register'),
-                        child: const Text('Register Gym', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                        onPressed: () => _showContactSales(),
+                        child: const Text('Contact Sales', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -260,6 +260,15 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showContactSales() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please use dashboard.gmmx.app/signup to register a new gym.'),
+        backgroundColor: AppColors.primary,
       ),
     );
   }
