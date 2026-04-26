@@ -47,7 +47,7 @@ class TrainerListPage extends ConsumerWidget {
                 ),
               ),
               SafeArea(
-                child: _buildMainContent(context, ref, isDark, trainersAsync, isMobile: true),
+                child: _buildMainContent(context, ref, isDark, trainersAsync, slug, isMobile: true),
               ),
             ],
           ),
@@ -70,7 +70,7 @@ class TrainerListPage extends ConsumerWidget {
           ),
         ),
       ),
-      web: _buildMainContent(context, ref, isDark, trainersAsync, isMobile: false),
+      web: _buildMainContent(context, ref, isDark, trainersAsync, slug, isMobile: false),
     );
   }
 
@@ -79,6 +79,7 @@ class TrainerListPage extends ConsumerWidget {
     WidgetRef ref, 
     bool isDark, 
     AsyncValue<List<UserModel>> trainersAsync,
+    String slug,
     {required bool isMobile}
   ) {
     return Column(

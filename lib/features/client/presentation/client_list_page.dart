@@ -85,7 +85,7 @@ class ClientListPage extends ConsumerWidget {
                 ),
               ),
               SafeArea(
-                child: _buildMainContent(context, ref, isDark, clientsAsync, isMobile: true),
+                child: _buildMainContent(context, ref, isDark, clientsAsync, slug, isMobile: true),
               ),
             ],
           ),
@@ -108,7 +108,7 @@ class ClientListPage extends ConsumerWidget {
           ),
         ),
       ),
-      web: _buildMainContent(context, ref, isDark, clientsAsync, isMobile: false),
+      web: _buildMainContent(context, ref, isDark, clientsAsync, slug, isMobile: false),
     );
   }
 
@@ -117,6 +117,7 @@ class ClientListPage extends ConsumerWidget {
     WidgetRef ref, 
     bool isDark, 
     AsyncValue<List<Client>> clientsAsync,
+    String slug,
     {required bool isMobile}
   ) {
     return Column(
