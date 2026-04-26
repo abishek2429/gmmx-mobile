@@ -25,6 +25,9 @@ final dioClientProvider = Provider<Dio>((ref) {
         final token = await storage.read(key: 'accessToken');
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
+          debugPrint('DIO: Added Token to ${options.path}');
+        } else {
+          debugPrint('DIO: NO TOKEN for ${options.path}');
         }
         handler.next(options);
       },

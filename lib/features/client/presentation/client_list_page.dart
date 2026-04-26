@@ -37,13 +37,8 @@ class Client {
 
 final clientListProvider = FutureProvider<List<Client>>((ref) async {
   final dio = ref.read(dioClientProvider);
-  final authService = ref.read(authServiceProvider);
-  final token = await authService.getToken();
 
-  final response = await dio.get(
-    '/api/members',
-    options: Options(headers: {'Authorization': 'Bearer $token'}),
-  );
+  final response = await dio.get('/api/members');
 
   if (response.statusCode == 200) {
     final List data = response.data['data']['content'] ?? []; // Page response

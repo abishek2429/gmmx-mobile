@@ -15,13 +15,7 @@ import '../../../../core/providers/theme_provider.dart';
 
 final trainerListProvider = FutureProvider<List<UserModel>>((ref) async {
   final dio = ref.read(dioClientProvider);
-  final authService = ref.read(authServiceProvider);
-  final token = await authService.getToken();
-
-  final response = await dio.get(
-    '/api/trainers',
-    options: Options(headers: {'Authorization': 'Bearer $token'}),
-  );
+  final response = await dio.get('/api/trainers');
   
   final List<dynamic> content = response.data['data']['content'] ?? [];
   return content.map((json) => UserModel.fromJson(json)).toList();
