@@ -146,6 +146,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // ─── ROLE-BASED DASHBOARDS (Multi-tenant) ──────────────────────
       GoRoute(
         path: '/:slug',
+        builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
         routes: [
           // ─── OWNER SHELL ───────────────────────────────────────────────
           StatefulShellRoute.indexedStack(
