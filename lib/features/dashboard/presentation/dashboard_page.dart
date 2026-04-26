@@ -5,6 +5,7 @@ import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/gmmx_components.dart';
+import '../../attendance/qr_attendance_page.dart';
 import '../../plans/presentation/plan_list_page.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import './web/web_dashboard_shell.dart';
