@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
+import 'package:forui/forui.dart';
 
 import 'trainer_creation_page.dart';
 import 'trainer_details_page.dart';
@@ -12,9 +13,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-
 import '../../../../core/widgets/responsive_layout.dart';
-import 'package:forui/forui.dart';
 
 final trainerListProvider = FutureProvider<List<UserModel>>((ref) async {
   final dio = ref.read(dioClientProvider);
@@ -116,9 +115,9 @@ class TrainerListPage extends ConsumerWidget {
                     children: [
                       if (!isMobile)
                         FButton(
-                          label: 'Add New Trainer',
                           onPress: () => context.push('/owner/trainers/add'),
                           prefix: const Icon(Icons.add_rounded),
+                          child: const Text('Add New Trainer'),
                         ),
                       const SizedBox(width: 12),
                       GestureDetector(
@@ -126,7 +125,7 @@ class TrainerListPage extends ConsumerWidget {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: AppTheme.glassButton(isDark: isDark),
-                          child: Icon(
+                          child: const Icon(
                             Icons.filter_list_rounded,
                             color: AppColors.primary,
                             size: 22,
@@ -184,158 +183,139 @@ class TrainerListPage extends ConsumerWidget {
           ),
         ),
 
-                  // Stats Row
-                  trainersAsync.when(
-                    data: (trainers) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _StatCard(
-                              label: 'Total',
-                              value: '${trainers.length}',
-                              icon: Icons.person_outlined,
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _StatCard(
-                              label: 'Active',
-                              value: '${trainers.where((t) => t.isActive).length}',
-                              icon: Icons.check_circle_outline_rounded,
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _StatCard(
-                              label: 'Workload',
-                              value: '-',
-                              icon: Icons.assignment_ind_outlined,
-                              isDark: isDark,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    loading: () => const SizedBox(),
-                    error: (e, s) => const SizedBox(),
+        // Content
+        Expanded(
+          child: trainersAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            error: (e, s) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                  const SizedBox(height: 16),
+                  Text('Error: $e', 
+                    style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
+                    textAlign: TextAlign.center,
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Trainer List
-                  Expanded(
-                    child: trainersAsync.when(
-                      loading: () => Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                      error: (e, s) => Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
-                            const SizedBox(height: 16),
-                            Text('Error: $e', 
-                              style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
-                              textAlign: TextAlign.center,
-                            ),
-                            TextButton(
-                              onPressed: () => ref.refresh(trainerListProvider),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      data: (trainers) => trainers.isEmpty
-                        ? Center(
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(32),
-                                    margin: const EdgeInsets.all(24),
-                                    decoration: AppTheme.cardDecoration(isDark: isDark),
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.fitness_center_rounded,
-                                          size: 64,
-                                          color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Text(
-                                          'No trainers yet',
-                                          style: TextStyle(
-                                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Onboard your first trainer to get started',
-                                          style: TextStyle(
-                                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                                            fontSize: 14,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () => ref.refresh(trainerListProvider.future),
-                            color: AppColors.primary,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                              itemCount: trainers.length,
-                              itemBuilder: (context, index) {
-                                final trainer = trainers[index];
-                                return TrainerCard(
-                                  trainer: trainer,
-                                  isDark: isDark,
-                                  onTap: () {
-                                     Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => TrainerDetailsPage(
-                                          trainer: trainer,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                    ),
+                  TextButton(
+                    onPressed: () => ref.refresh(trainerListProvider),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/owner/trainers/add'),
-        backgroundColor: AppColors.primary,
-        elevation: 8,
-        label: const Text(
-          'Add Trainer',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
+            data: (trainers) => Column(
+              children: [
+                // Stats Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Total',
+                          value: '${trainers.length}',
+                          icon: Icons.person_outlined,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Active',
+                          value: '${trainers.where((t) => t.isActive).length}',
+                          icon: Icons.check_circle_outline_rounded,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Workload',
+                          value: '-',
+                          icon: Icons.assignment_ind_outlined,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Trainer List
+                Expanded(
+                  child: trainers.isEmpty
+                    ? Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(32),
+                                margin: const EdgeInsets.all(24),
+                                decoration: AppTheme.cardDecoration(isDark: isDark),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.fitness_center_rounded,
+                                      size: 64,
+                                      color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      'No trainers yet',
+                                      style: TextStyle(
+                                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Onboard your first trainer to get started',
+                                      style: TextStyle(
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () => ref.refresh(trainerListProvider.future),
+                        color: AppColors.primary,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                          itemCount: trainers.length,
+                          itemBuilder: (context, index) {
+                            final trainer = trainers[index];
+                            return TrainerCard(
+                              trainer: trainer,
+                              isDark: isDark,
+                              onTap: () {
+                                 Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => TrainerDetailsPage(
+                                      trainer: trainer,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
-        icon: const Icon(
-          Icons.add_rounded,
-          color: Colors.white,
-        ),
-      ),
+      ],
     );
   }
 }
@@ -455,8 +435,8 @@ class TrainerCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.success.withValues(alpha: 0.12)
-                        : AppColors.error.withValues(alpha: 0.12),
+                        ? AppColors.success.withOpacity(0.12)
+                        : AppColors.error.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -503,6 +483,7 @@ class TrainerCard extends StatelessWidget {
 
 class _MiniStat extends StatelessWidget {
   const _MiniStat({
+    super.key,
     required this.label,
     required this.value,
     required this.icon,

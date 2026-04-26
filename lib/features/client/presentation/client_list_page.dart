@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
+import 'package:forui/forui.dart';
 
 import 'client_creation_page.dart';
 import 'client_details_page.dart';
@@ -12,7 +13,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/whatsapp_service.dart';
 import '../../../../core/widgets/responsive_layout.dart';
-import 'package:forui/forui.dart';
 
 // Client model
 class Client {
@@ -153,9 +153,9 @@ class ClientListPage extends ConsumerWidget {
                     children: [
                       if (!isMobile)
                         FButton(
-                          label: 'Add New Member',
                           onPress: () => context.push('/owner/members/add'),
                           prefix: const Icon(Icons.add_rounded),
+                          child: const Text('Add New Member'),
                         ),
                       const SizedBox(width: 12),
                       GestureDetector(
@@ -163,7 +163,7 @@ class ClientListPage extends ConsumerWidget {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: AppTheme.glassButton(isDark: isDark),
-                          child: Icon(
+                          child: const Icon(
                             Icons.filter_list_rounded,
                             color: AppColors.primary,
                             size: 22,
@@ -221,163 +221,141 @@ class ClientListPage extends ConsumerWidget {
           ),
         ),
 
-                  // Content based on AsyncValue
-                  Expanded(
-                    child: clientsAsync.when(
-                      data: (clients) => Column(
-                        children: [
-                          // Stats Row
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Row(
+        // Content
+        Expanded(
+          child: clientsAsync.when(
+            data: (clients) => Column(
+              children: [
+                // Stats Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Total',
+                          value: clients.length.toString(),
+                          icon: Icons.people_outline_rounded,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Active',
+                          value: clients.where((c) => c.isActive).length.toString(),
+                          icon: Icons.check_circle_outline_rounded,
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Avg Attn',
+                          value: clients.isEmpty ? "0" : (clients.fold<int>(0, (sum, c) => sum + c.attendanceCount) / clients.length).toStringAsFixed(0),
+                          icon: Icons.analytics_outlined,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Client List
+                Expanded(
+                  child: clients.isEmpty
+                      ? Center(
+                          child: SingleChildScrollView(
+                            child: Column(
                               children: [
-                                Expanded(
-                                  child: _StatCard(
-                                    label: 'Total',
-                                    value: clients.length.toString(),
-                                    icon: Icons.people_outline_rounded,
-                                    isDark: isDark,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _StatCard(
-                                    label: 'Active',
-                                    value: clients.where((c) => c.isActive).length.toString(),
-                                    icon: Icons.check_circle_outline_rounded,
-                                    isDark: isDark,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _StatCard(
-                                    label: 'Avg Attn',
-                                    value: clients.isEmpty ? "0" : (clients.fold<int>(0, (sum, c) => sum + c.attendanceCount) / clients.length).toStringAsFixed(0),
-                                    icon: Icons.analytics_outlined,
-                                    isDark: isDark,
+                                Container(
+                                  padding: const EdgeInsets.all(32),
+                                  margin: const EdgeInsets.all(24),
+                                  decoration: AppTheme.cardDecoration(isDark: isDark),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.people_outline_rounded,
+                                        size: 64,
+                                        color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        'No members yet',
+                                        style: TextStyle(
+                                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Add your first member to get started',
+                                        style: TextStyle(
+                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-
-                          const SizedBox(height: 24),
-
-                          // Client List
-                          Expanded(
-                            child: clients.isEmpty
-                                ? Center(
-                                    child: SingleChildScrollView(
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(32),
-                                            margin: const EdgeInsets.all(24),
-                                            decoration: AppTheme.cardDecoration(isDark: isDark),
-                                            child: Column(
-                                              children: [
-                                                Icon(
-                                                  Icons.people_outline_rounded,
-                                                  size: 64,
-                                                  color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                                                ),
-                                                const SizedBox(height: 20),
-                                                Text(
-                                                  'No members yet',
-                                                  style: TextStyle(
-                                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  'Add your first member to get started',
-                                                  style: TextStyle(
-                                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                                                    fontSize: 14,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () => ref.refresh(clientListProvider.future),
+                          color: AppColors.primary,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                            itemCount: clients.length,
+                            itemBuilder: (context, index) {
+                              final client = clients[index];
+                              return ClientCard(
+                                client: client,
+                                isDark: isDark,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ClientDetailsPage(
+                                        client: client,
                                       ),
                                     ),
-                                  )
-                                : RefreshIndicator(
-                                    onRefresh: () => ref.refresh(clientListProvider.future),
-                                    color: AppColors.primary,
-                                    child: ListView.builder(
-                                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                                      itemCount: clients.length,
-                                      itemBuilder: (context, index) {
-                                        final client = clients[index];
-                                        return ClientCard(
-                                          client: client,
-                                          isDark: isDark,
-                                          onTap: () {
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => ClientDetailsPage(
-                                                  client: client,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ),
+                                  );
+                                },
+                              );
+                            },
                           ),
-                        ],
-                      ),
-                      loading: () => Center(
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      ),
-                      error: (error, stack) => Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
-                            const SizedBox(height: 16),
-                            Text('Error: $error', 
-                              style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
-                              textAlign: TextAlign.center,
-                            ),
-                            TextButton(
-                              onPressed: () => ref.refresh(clientListProvider),
-                              child: const Text('Retry'),
-                            ),
-                          ],
                         ),
-                      ),
-                    ),
+                ),
+              ],
+            ),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+            error: (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                  const SizedBox(height: 16),
+                  Text('Error: $error', 
+                    style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
+                    textAlign: TextAlign.center,
+                  ),
+                  TextButton(
+                    onPressed: () => ref.refresh(clientListProvider),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/owner/members/add'),
-        backgroundColor: AppColors.primary,
-        elevation: 8,
-        label: const Text(
-          'Add Member',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
           ),
         ),
-        icon: const Icon(
-          Icons.add_rounded,
-          color: Colors.white,
-        ),
-      ),
+      ],
     );
   }
 }
@@ -480,7 +458,7 @@ class ClientCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.fitness_center_rounded, size: 12, color: AppColors.primary),
+                          const Icon(Icons.fitness_center_rounded, size: 12, color: AppColors.primary),
                           const SizedBox(width: 4),
                           Text(
                             client.assignedTrainer,
@@ -503,7 +481,7 @@ class ClientCard extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     margin: const EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
+                      color: AppColors.success.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.chat_bubble_rounded, color: AppColors.success, size: 20),
@@ -516,8 +494,8 @@ class ClientCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: client.isActive
-                        ? AppColors.success.withValues(alpha: 0.12)
-                        : AppColors.error.withValues(alpha: 0.12),
+                        ? AppColors.success.withOpacity(0.12)
+                        : AppColors.error.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -564,6 +542,7 @@ class ClientCard extends StatelessWidget {
 
 class _MiniStat extends StatelessWidget {
   const _MiniStat({
+    super.key,
     required this.label,
     required this.value,
     required this.icon,
