@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:gmmx_mobile/features/auth/providers/gym_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/providers/theme_provider.dart';
@@ -22,11 +23,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _mobileController = TextEditingController();
   final _pinController = TextEditingController();
   bool _showPinField = false;
+  String _countryCode = '+91';
 
   @override
   void initState() {
     super.initState();
-    _mobileController.text = '+91';
   }
 
   @override
@@ -37,16 +38,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _handleLogin() async {
-    String mobile = _mobileController.text.trim();
+    final mobile = _mobileController.text.trim();
     final pin = _pinController.text.trim();
     final gym = ref.read(gymProvider).value;
-
-    // Normalize Indian mobile numbers (strip +91 or 91 if it makes it 10 digits)
-    if (mobile.startsWith('+91')) {
-      mobile = mobile.substring(3);
-    } else if (mobile.startsWith('91') && mobile.length == 12) {
-      mobile = mobile.substring(2);
-    }
 
     if (mobile.isEmpty || pin.length < 4 || gym == null) {
       _showError('Please enter valid mobile and 4-digit PIN');
@@ -179,11 +173,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                         
                         // ─── Login Form ───
-                        FTextField(
-                          control: FTextFieldControl.managed(controller: _mobileController),
-                          label: const Text('Mobile Number'),
-                          hint: 'Enter your mobile number',
-                          keyboardType: TextInputType.phone,
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            inputDecorationTheme: InputDecorationTheme(
+                              filled: true,
+                              fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            ),
+                          ),
+                          child: IntlPhoneField(
+                            controller: _mobileController,
+                            initialCountryCode: 'IN',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            dropdownTextStyle: const TextStyle(fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              labelText: 'Mobile Number',
+                              labelStyle: TextStyle(
+                                color: isDark ? Colors.grey : Colors.grey[600],
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              hintText: '99447XXXXX',
+                              counterText: '', // Hide default counter
+                            ),
+                            onChanged: (phone) {
+                              setState(() {
+                                _countryCode = '+${phone.countryCode}';
+                              });
+                            },
+                          ),
                         ),
                         const SizedBox(height: 20),
                         

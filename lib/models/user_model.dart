@@ -1,6 +1,7 @@
 class UserModel {
   final String id;
   final String email;
+  final String countryCode;
   final String mobile;
   final String fullName;
   final String role;
@@ -10,6 +11,7 @@ class UserModel {
   const UserModel({
     required this.id,
     required this.email,
+    required this.countryCode,
     required this.mobile,
     required this.fullName,
     required this.role,
@@ -21,6 +23,7 @@ class UserModel {
     return UserModel(
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
+      countryCode: json['countryCode'] as String? ?? '+91',
       mobile: json['mobile'] as String? ?? '',
       fullName: json['fullName'] as String? ?? '',
       role: json['role'] as String? ?? '',
@@ -33,6 +36,7 @@ class UserModel {
     return {
       'id': id,
       'email': email,
+      'countryCode': countryCode,
       'mobile': mobile,
       'fullName': fullName,
       'role': role,
