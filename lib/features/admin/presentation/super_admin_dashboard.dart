@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/network/dio_client.dart';
+import './gym_users_screen.dart';
 
 class SuperAdminDashboard extends ConsumerStatefulWidget {
   const SuperAdminDashboard({super.key});
@@ -50,36 +51,14 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     }
   }
 
-  Future<void> _deleteGym(String id, String name) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "$name"? This will permanently remove all its users and data.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
-          ),
-        ],
+  void _manageGym(String id, String name) {
+    // Navigate to Gym Users management
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GymUsersScreen(gymId: id, gymName: name),
       ),
     );
-
-    if (confirmed == true) {
-      try {
-        final dio = ref.read(dioClientProvider);
-        await dio.delete('/api/super-admin/gyms/$id');
-        _loadData();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gym deleted successfully')));
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e'), backgroundColor: AppColors.error));
-        }
-      }
-    }
   }
 
   @override
@@ -112,7 +91,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
                     return _GymCard(
                       gym: gym,
                       isDark: isDark,
-                      onDelete: () => _deleteGym(gym['id'], gym['name']),
+                      onManage: () => _manageGym(gym['id'], gym['name']),
                     );
                   },
                 ),
@@ -125,9 +104,9 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
 class _GymCard extends StatelessWidget {
   final dynamic gym;
   final bool isDark;
-  final VoidCallback onDelete;
+  final VoidCallback onManage;
 
-  const _GymCard({required this.gym, required this.isDark, required this.onDelete});
+  const _GymCard({required this.gym, required this.isDark, required this.onManage});
 
   @override
   Widget build(BuildContext context) {
@@ -170,8 +149,8 @@ class _GymCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
-                  onPressed: onDelete,
+                  icon: const Icon(Icons.manage_accounts_rounded, color: AppColors.primary, size: 24),
+                  onPressed: onManage,
                 ),
               ],
             ),
