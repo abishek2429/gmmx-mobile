@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/providers/theme_provider.dart';
-import '../../../../core/providers/plan_provider.dart';
-import '../../../../models/plan_model.dart';
-import '../../../../services/session_service.dart';
-import '../../auth/presentation/auth_controller.dart';
-import '../../auth/providers/gym_provider.dart';
+import 'package:gmmx_mobile/core/theme/app_colors.dart';
+import 'package:gmmx_mobile/core/theme/app_theme.dart';
+import 'package:gmmx_mobile/core/providers/theme_provider.dart';
+import 'package:gmmx_mobile/core/providers/plan_provider.dart';
+import 'package:gmmx_mobile/models/plan_model.dart';
+import 'package:gmmx_mobile/services/session_service.dart';
+import 'package:gmmx_mobile/features/auth/presentation/auth_controller.dart';
+import 'package:gmmx_mobile/features/auth/providers/gym_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

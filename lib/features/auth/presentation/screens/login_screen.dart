@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gmmx_mobile/features/auth/providers/gym_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/services/device_id_service.dart';
-import '../../providers/gym_provider.dart';
 import '../auth_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 

@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/providers/theme_provider.dart';
+import 'package:gmmx_mobile/core/theme/app_colors.dart';
+import 'package:gmmx_mobile/core/providers/theme_provider.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
@@ -255,7 +255,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                         height: 60,
                         child: FButton(
                           onPress: () => context.push('/gym-lookup'),
-                          label: const Text('Get Started'),
+                          child: const Text('Get Started'),
                         ),
                       ),
                     ],
