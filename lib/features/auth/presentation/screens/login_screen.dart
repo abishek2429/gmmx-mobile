@@ -121,29 +121,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         
                         // ─── Branding ───
                         Center(
-                          child: Hero(
-                            tag: 'gym-logo',
-                            child: Container(
-                              height: 80,
-                              width: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 20,
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Image.asset(
-                                  'assets/images/logo-trans.png',
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, _, __) => 
-                                    const Icon(Icons.fitness_center, color: AppColors.primary, size: 40),
+                          child: Container(
+                            height: 80,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 20,
                                 ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                'assets/images/logo-trans.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, _, __) => 
+                                  const Icon(Icons.fitness_center, color: AppColors.primary, size: 40),
                               ),
                             ),
                           ),
