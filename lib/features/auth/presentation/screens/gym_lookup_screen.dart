@@ -244,14 +244,13 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
                   
                   const SizedBox(height: 80),
                   
-                  Opacity(
-                    opacity: 0.5,
+                  const Center(
                     child: Text(
-                      'POWERED BY GMMX',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                      'Powered by Gmmx Technologies',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
                       ),
                     ),
                   ),
