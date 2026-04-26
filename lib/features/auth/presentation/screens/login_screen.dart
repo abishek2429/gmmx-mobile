@@ -175,8 +175,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const Spacer(),
                   
                   // ─── Google Sign In ───
-                  FButton.outline(
+                  FButton(
                     onPress: authState.isGoogleVerifying ? null : _handleGoogleLogin,
+                    style: FButtonStyle.secondary,
                     label: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

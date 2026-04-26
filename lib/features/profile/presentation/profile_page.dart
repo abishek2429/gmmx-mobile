@@ -279,13 +279,13 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _PlanStatusCard extends StatelessWidget {
+class _PlanStatusCard extends ConsumerWidget {
   const _PlanStatusCard({required this.plan, required this.isDark});
   final GymPlan plan;
   final bool isDark;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
