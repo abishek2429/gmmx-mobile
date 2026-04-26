@@ -143,197 +143,201 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // ─── OWNER SHELL ───────────────────────────────────────────────
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return OwnerShell(navigationShell: navigationShell);
-        },
-        branches: [
-          StatefulShellBranch(
-            navigatorKey: _ownerHomeKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/owner',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: OwnerDashboard()),
+      // ─── ROLE-BASED DASHBOARDS (Multi-tenant) ──────────────────────
+      GoRoute(
+        path: '/:slug',
+        routes: [
+          // ─── OWNER SHELL ───────────────────────────────────────────────
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return OwnerShell(navigationShell: navigationShell);
+            },
+            branches: [
+              StatefulShellBranch(
+                navigatorKey: _ownerHomeKey,
+                routes: [
+                  GoRoute(
+                    path: 'owner',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: OwnerDashboard()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _ownerMembersKey,
+                routes: [
+                  GoRoute(
+                    path: 'owner/members',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: ClientListPage()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _ownerTrainersKey,
+                routes: [
+                  GoRoute(
+                    path: 'owner/trainers',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: TrainerListPage()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _ownerPlansKey,
+                routes: [
+                  GoRoute(
+                    path: 'owner/plans',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: PaymentsPage()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _ownerProfileKey,
+                routes: [
+                  GoRoute(
+                    path: 'owner/profile',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: ProfilePage()),
+                  ),
+                ],
               ),
             ],
           ),
-          StatefulShellBranch(
-            navigatorKey: _ownerMembersKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/owner/members',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: ClientListPage()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _ownerTrainersKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/owner/trainers',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: TrainerListPage()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _ownerPlansKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/owner/plans',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: PaymentsPage()),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _ownerProfileKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/owner/profile',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: ProfilePage()),
-              ),
-            ],
-          ),
-        ],
-      ),
 
-      // ─── TRAINER SHELL ─────────────────────────────────────────────
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return TrainerShell(navigationShell: navigationShell);
-        },
-        branches: [
-          StatefulShellBranch(
-            navigatorKey: _trainerHomeKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/trainer',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: TrainerDashboard()),
+          // ─── TRAINER SHELL ─────────────────────────────────────────────
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return TrainerShell(navigationShell: navigationShell);
+            },
+            branches: [
+              StatefulShellBranch(
+                navigatorKey: _trainerHomeKey,
+                routes: [
+                  GoRoute(
+                    path: 'trainer',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: TrainerDashboard()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _trainerClientsKey,
+                routes: [
+                  GoRoute(
+                    path: 'trainer/clients',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                      child: TrainerClientsPage(),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _trainerPlansKey,
+                routes: [
+                  GoRoute(
+                    path: 'trainer/plans',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                      child: TrainerWorkoutPlansPage(),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _trainerAttendanceKey,
+                routes: [
+                  GoRoute(
+                    path: 'trainer/attendance',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                      child: QrScannerPage(),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _trainerProfileKey,
+                routes: [
+                  GoRoute(
+                    path: 'trainer/profile',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: ProfilePage()),
+                  ),
+                ],
               ),
             ],
           ),
-          StatefulShellBranch(
-            navigatorKey: _trainerClientsKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/trainer/clients',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: TrainerClientsPage(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _trainerPlansKey,
-            routes: [
-              GoRoute(
-                path: '/trainer/plans',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: TrainerWorkoutPlansPage(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _trainerAttendanceKey,
-            routes: [
-              GoRoute(
-                path: '/trainer/attendance',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: QrScannerPage(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _trainerProfileKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/trainer/profile',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: ProfilePage()),
-              ),
-            ],
-          ),
-        ],
-      ),
 
-      // ─── CLIENT SHELL ──────────────────────────────────────────────
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return ClientShell(navigationShell: navigationShell);
-        },
-        branches: [
-          StatefulShellBranch(
-            navigatorKey: _clientHomeKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/client',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: ClientDashboard()),
+          // ─── CLIENT SHELL ──────────────────────────────────────────────
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return ClientShell(navigationShell: navigationShell);
+            },
+            branches: [
+              StatefulShellBranch(
+                navigatorKey: _clientHomeKey,
+                routes: [
+                  GoRoute(
+                    path: 'client',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: ClientDashboard()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _clientWorkoutKey,
+                routes: [
+                  GoRoute(
+                    path: 'client/workout',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                      child: WorkoutPlanPage(),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _clientHistoryKey,
+                routes: [
+                  GoRoute(
+                    path: 'client/history',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                      child: AttendanceHistoryPage(),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _clientProgressKey,
+                routes: [
+                  GoRoute(
+                    path: 'client/progress',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                      child: ProgressPage(),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                navigatorKey: _clientProfileKey,
+                routes: [
+                  GoRoute(
+                    path: 'client/profile',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: ProfilePage()),
+                  ),
+                ],
               ),
             ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _clientWorkoutKey,
-            routes: [
-              GoRoute(
-                path: '/client/workout',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: WorkoutPlanPage(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _clientHistoryKey,
-            routes: [
-              GoRoute(
-                path: '/client/history',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: AttendanceHistoryPage(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _clientProgressKey,
-            routes: [
-              GoRoute(
-                path: '/client/progress',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: ProgressPage(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _clientProfileKey,
-            routes: [
-              GoRoute(
-                path: '/:slug/client/profile',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: ProfilePage()),
-              ),
-            ],
-          ),
-        ],
       ),
 
       // ─── Full-screen routes (outside shell — no bottom nav) ────────
       GoRoute(
-        path: '/owner/members/add',
+        path: '/:slug/owner/members/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ClientCreationPage(),
       ),
       GoRoute(
-        path: '/owner/trainers/add',
+        path: '/:slug/owner/trainers/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const TrainerCreationPage(),
       ),
