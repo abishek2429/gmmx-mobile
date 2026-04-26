@@ -14,6 +14,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/widgets/responsive_layout.dart';
+import '../../auth/providers/gym_provider.dart';
 
 final trainerListProvider = FutureProvider<List<UserModel>>((ref) async {
   final dio = ref.read(dioClientProvider);
@@ -30,6 +31,8 @@ class TrainerListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final trainersAsync = ref.watch(trainerListProvider);
+    final gym = ref.watch(gymProvider).value;
+    final slug = gym?.subdomain ?? 'dashboard';
 
     return ResponsiveLayout(
       mobile: Scaffold(
@@ -50,7 +53,7 @@ class TrainerListPage extends ConsumerWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.push('/owner/trainers/add'),
+          onPressed: () => context.push('/$slug/owner/trainers/add'),
           backgroundColor: AppColors.primary,
           elevation: 8,
           label: const Text(
@@ -115,7 +118,7 @@ class TrainerListPage extends ConsumerWidget {
                     children: [
                       if (!isMobile)
                         FButton(
-                          onPress: () => context.push('/owner/trainers/add'),
+                          onPress: () => context.push('/$slug/owner/trainers/add'),
                           prefix: const Icon(Icons.add_rounded),
                           child: const Text('Add New Trainer'),
                         ),

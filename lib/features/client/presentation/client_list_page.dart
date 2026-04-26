@@ -13,6 +13,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/whatsapp_service.dart';
 import '../../../../core/widgets/responsive_layout.dart';
+import '../../auth/providers/gym_provider.dart';
 
 // Client model
 class Client {
@@ -68,6 +69,8 @@ class ClientListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final clientsAsync = ref.watch(clientListProvider);
+    final gym = ref.watch(gymProvider).value;
+    final slug = gym?.subdomain ?? 'dashboard';
 
     return ResponsiveLayout(
       mobile: Scaffold(
@@ -88,7 +91,7 @@ class ClientListPage extends ConsumerWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.push('/owner/members/add'),
+          onPressed: () => context.push('/$slug/owner/members/add'),
           backgroundColor: AppColors.primary,
           elevation: 8,
           label: const Text(
@@ -153,7 +156,7 @@ class ClientListPage extends ConsumerWidget {
                     children: [
                       if (!isMobile)
                         FButton(
-                          onPress: () => context.push('/owner/members/add'),
+                          onPress: () => context.push('/$slug/owner/members/add'),
                           prefix: const Icon(Icons.add_rounded),
                           child: const Text('Add New Member'),
                         ),
