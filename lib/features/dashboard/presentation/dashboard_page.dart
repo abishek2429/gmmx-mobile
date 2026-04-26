@@ -48,44 +48,39 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     final isDark = ref.watch(themeProvider);
 
     return ResponsiveLayout(
-      mobile: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAnimatedTopBar(context, isDark),
-                  const SizedBox(height: 24),
-                  _buildHeroCard(isDark),
-                  const SizedBox(height: 24),
-                  _buildPrimaryActions(context, isDark),
-                  const SizedBox(height: 24),
-                  _buildStatGrid(isDark),
-                  const SizedBox(height: 24),
-                  _buildRecentSessions(isDark),
-                  const SizedBox(height: 24),
-                  _buildLeaderboardCard(isDark),
-                  const SizedBox(height: 24),
-                  _buildPremiumCard(context, isDark),
-                  const SizedBox(height: 16),
-                ],
-              ),
+      mobile: Stack(
+        children: [
+          SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAnimatedTopBar(context, isDark),
+                const SizedBox(height: 24),
+                _buildHeroCard(isDark),
+                const SizedBox(height: 24),
+                _buildPrimaryActions(context, isDark),
+                const SizedBox(height: 24),
+                _buildStatGrid(isDark),
+                const SizedBox(height: 24),
+                _buildRecentSessions(isDark),
+                const SizedBox(height: 24),
+                _buildLeaderboardCard(isDark),
+                const SizedBox(height: 24),
+                _buildPremiumCard(context, isDark),
+                const SizedBox(height: 16),
+              ],
             ),
-            Positioned(
-              right: 16,
-              bottom: 120,
-              child: _buildFloatingMenu(context),
-            ),
-          ],
-        ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 120,
+            child: _buildFloatingMenu(context),
+          ),
+        ],
       ),
-      web: WebDashboardShell(
-        content: _buildWebContent(isDark),
-      ),
+      web: _buildWebContent(isDark),
     );
   }
 

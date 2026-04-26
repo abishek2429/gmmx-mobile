@@ -6,11 +6,15 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 
 class WebDashboardShell extends ConsumerStatefulWidget {
-  final Widget content;
+  final Widget child;
+  final int selectedIndex;
+  final Function(int) onItemSelected;
 
   const WebDashboardShell({
     super.key,
-    required this.content,
+    required this.child,
+    required this.selectedIndex,
+    required this.onItemSelected,
   });
 
   @override
@@ -18,7 +22,6 @@ class WebDashboardShell extends ConsumerStatefulWidget {
 }
 
 class _WebDashboardShellState extends ConsumerState<WebDashboardShell> {
-  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -75,10 +78,8 @@ class _WebDashboardShellState extends ConsumerState<WebDashboardShell> {
             children: [
               // Sidebar
               WebSidebar(
-                selectedIndex: _selectedIndex,
-                onItemSelected: (index) {
-                  setState(() => _selectedIndex = index);
-                },
+                selectedIndex: widget.selectedIndex,
+                onItemSelected: widget.onItemSelected,
               ),
 
               // Main Content
@@ -92,7 +93,7 @@ class _WebDashboardShellState extends ConsumerState<WebDashboardShell> {
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(32),
-                        child: widget.content,
+                        child: widget.child,
                       ),
                     ),
                   ],

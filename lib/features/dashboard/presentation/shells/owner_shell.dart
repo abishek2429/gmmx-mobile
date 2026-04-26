@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 
+import '../web/web_dashboard_shell.dart';
+import '../../../../core/widgets/responsive_layout.dart';
+
 class OwnerShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -19,33 +22,40 @@ class OwnerShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: FBottomNavigationBar(
-        index: navigationShell.currentIndex,
-        onChange: _onTap,
-        children: const [
-          FBottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: Text('Home'),
-          ),
-          FBottomNavigationBarItem(
-            icon: Icon(Icons.people_alt_rounded),
-            label: Text('Members'),
-          ),
-          FBottomNavigationBarItem(
-            icon: Icon(Icons.fitness_center_rounded),
-            label: Text('Trainers'),
-          ),
-          FBottomNavigationBarItem(
-            icon: Icon(Icons.payments_rounded),
-            label: Text('Finance'),
-          ),
-          FBottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: Text('Profile'),
-          ),
-        ],
+    return ResponsiveLayout(
+      mobile: Scaffold(
+        body: navigationShell,
+        bottomNavigationBar: FBottomNavigationBar(
+          index: navigationShell.currentIndex,
+          onChange: _onTap,
+          children: const [
+            FBottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_rounded),
+              label: Text('Home'),
+            ),
+            FBottomNavigationBarItem(
+              icon: Icon(Icons.people_alt_rounded),
+              label: Text('Members'),
+            ),
+            FBottomNavigationBarItem(
+              icon: Icon(Icons.fitness_center_rounded),
+              label: Text('Trainers'),
+            ),
+            FBottomNavigationBarItem(
+              icon: Icon(Icons.payments_rounded),
+              label: Text('Finance'),
+            ),
+            FBottomNavigationBarItem(
+              icon: Icon(Icons.settings_rounded),
+              label: Text('Profile'),
+            ),
+          ],
+        ),
+      ),
+      web: WebDashboardShell(
+        selectedIndex: navigationShell.currentIndex,
+        onItemSelected: _onTap,
+        child: navigationShell,
       ),
     );
   }
