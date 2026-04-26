@@ -8,6 +8,7 @@ import '../../../../core/providers/plan_provider.dart';
 import '../../../../models/plan_model.dart';
 import '../../../../services/session_service.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/providers/gym_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

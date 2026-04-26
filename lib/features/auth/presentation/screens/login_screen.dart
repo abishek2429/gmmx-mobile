@@ -143,7 +143,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   
                   // ─── Login Form ───
                   FTextField(
-                    controller: _mobileController,
+                    control: FTextFieldControl.managed(controller: _mobileController),
                     label: const Text('Mobile Number'),
                     hint: 'Enter your mobile number',
                     keyboardType: TextInputType.phone,
@@ -153,11 +153,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   if (!_showPinField)
                     FButton(
                       onPress: () => setState(() => _showPinField = true),
-                      label: const Text('Continue with OTP/PIN'),
+                      child: const Text('Continue with OTP/PIN'),
                     )
                   else ...[
                     FTextField(
-                      controller: _pinController,
+                      control: FTextFieldControl.managed(controller: _pinController),
                       label: const Text('4-Digit PIN'),
                       hint: '••••',
                       obscureText: true,
@@ -166,7 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 32),
                     FButton(
                       onPress: authState.isVerifying ? null : _handleLogin,
-                      label: authState.isVerifying 
+                      child: authState.isVerifying 
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Text('Sign In'),
                     ),
@@ -177,8 +177,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // ─── Google Sign In ───
                   FButton(
                     onPress: authState.isGoogleVerifying ? null : _handleGoogleLogin,
-                    style: FButtonStyle.secondary,
-                    label: const Row(
+                    variant: FButtonVariant.outline,
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.g_mobiledata_rounded, size: 28),

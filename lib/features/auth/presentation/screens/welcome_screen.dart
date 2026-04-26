@@ -25,17 +25,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   final List<Map<String, String>> _features = [
     {
       'title': 'All-in-One Management',
-      'desc': 'Effortlessly manage members, trainers, and staff from a single unified dashboard.',
+      'desc':
+          'Effortlessly manage members, trainers, and staff from a single unified dashboard.',
       'icon': '🏢'
     },
     {
       'title': 'Smart Attendance',
-      'desc': 'Modern QR-based attendance tracking for members and trainers with real-time logs.',
+      'desc':
+          'Modern QR-based attendance tracking for members and trainers with real-time logs.',
       'icon': '📱'
     },
     {
       'title': 'Financial Insights',
-      'desc': 'Track payments, memberships, and revenue growth with deep analytical reports.',
+      'desc':
+          'Track payments, memberships, and revenue growth with deep analytical reports.',
       'icon': '📈'
     },
   ];
@@ -84,7 +87,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Stack(
         children: [
           // ─── Background Ambient Glow ───
@@ -128,7 +132,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                           'https://api.gmmx.app/logo-gmmx.png',
                           height: 60,
                           errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.fitness_center, size: 40, color: AppColors.primary),
+                              const Icon(Icons.fitness_center,
+                                  size: 40, color: AppColors.primary),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -173,7 +178,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                             child: Transform.scale(
                               scale: 0.9 + (value * 0.1),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 40),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 40),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -188,7 +194,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                                       style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.w800,
-                                        color: isDark ? Colors.white : AppColors.textPrimary,
+                                        color: isDark
+                                            ? Colors.white
+                                            : AppColors.textPrimary,
                                         letterSpacing: -0.5,
                                       ),
                                     ),
@@ -198,7 +206,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 15,
-                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                        color: isDark
+                                            ? AppColors.textSecondaryDark
+                                            : AppColors.textSecondary,
                                         height: 1.5,
                                       ),
                                     ),
@@ -224,7 +234,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                       height: 8,
                       width: _currentPage == index ? 24 : 8,
                       decoration: BoxDecoration(
-                        color: _currentPage == index ? AppColors.primary : AppColors.primary.withOpacity(0.2),
+                        color: _currentPage == index
+                            ? AppColors.primary
+                            : AppColors.primary.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
