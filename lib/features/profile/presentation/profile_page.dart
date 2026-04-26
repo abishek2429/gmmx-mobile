@@ -210,9 +210,11 @@ class ProfilePage extends ConsumerWidget {
                             labelColor: AppColors.error,
                             iconColor: AppColors.error,
                             trailing: const SizedBox.shrink(),
-                            onTap: () {
-                              ref.read(authControllerProvider.notifier).logout();
-                              context.go('/');
+                            onTap: () async {
+                              await ref.read(authControllerProvider.notifier).logout();
+                              if (context.mounted) {
+                                context.go('/');
+                              }
                             },
                           ),
                         ],

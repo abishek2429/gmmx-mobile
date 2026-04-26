@@ -182,9 +182,14 @@ class AuthController extends StateNotifier<AuthState> {
 
   /// Logout
   Future<void> logout() async {
-    await _authService.logout();
-    await _sessionService.clearSession();
-    state = const AuthState();
+    try {
+      await _authService.logout();
+    } catch (_) {
+      // Ignore network errors on logout
+    } finally {
+      await _sessionService.clearSession();
+      state = const AuthState();
+    }
   }
 
   /// Reset state for new login attempt
