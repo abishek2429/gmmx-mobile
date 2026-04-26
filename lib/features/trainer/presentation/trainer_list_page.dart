@@ -13,6 +13,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 
+import '../../../../core/widgets/responsive_layout.dart';
+import 'package:forui/forui.dart';
+
 final trainerListProvider = FutureProvider<List<UserModel>>((ref) async {
   final dio = ref.read(dioClientProvider);
   final response = await dio.get('/api/trainers');
@@ -29,111 +32,157 @@ class TrainerListPage extends ConsumerWidget {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final trainersAsync = ref.watch(trainerListProvider);
 
-    return Scaffold(
-      body: Container(
-        decoration: AppTheme.pageBackground(isDark: isDark),
-        child: Stack(
-          children: [
-            // Background Glow
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: AppTheme.foregroundGlow(isDark: isDark),
+    return ResponsiveLayout(
+      mobile: Scaffold(
+        body: Container(
+          decoration: AppTheme.pageBackground(isDark: isDark),
+          child: Stack(
+            children: [
+              // Background Glow
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: AppTheme.foregroundGlow(isDark: isDark),
+                ),
               ),
+              SafeArea(
+                child: _buildMainContent(context, ref, isDark, trainersAsync, isMobile: true),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => context.push('/owner/trainers/add'),
+          backgroundColor: AppColors.primary,
+          elevation: 8,
+          label: const Text(
+            'Add Trainer',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
-            SafeArea(
-              child: Column(
+          ),
+          icon: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      web: _buildMainContent(context, ref, isDark, trainersAsync, isMobile: false),
+    );
+  }
+
+  Widget _buildMainContent(
+    BuildContext context, 
+    WidgetRef ref, 
+    bool isDark, 
+    AsyncValue<List<UserModel>> trainersAsync,
+    {required bool isMobile}
+  ) {
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: EdgeInsets.all(isMobile ? 20 : 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Team Trainers',
-                                  style: TextStyle(
-                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Manage your training staff',
-                                  style: TextStyle(
-                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: AppTheme.glassButton(isDark: isDark),
-                                child: Icon(
-                                  Icons.filter_list_rounded,
-                                  color: AppColors.primary,
-                                  size: 22,
-                                ),
-                              ),
-                            ),
-                          ],
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Team Trainers',
+                        style: TextStyle(
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                          fontSize: isMobile ? 28 : 32,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
-                        const SizedBox(height: 20),
-                        TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search trainers...',
-                            hintStyle: TextStyle(
-                              color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search_rounded,
-                              color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                            ),
-                            filled: true,
-                            fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                                width: 1,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                                width: 1,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 1.5,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          style: TextStyle(
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Manage your training staff',
+                        style: TextStyle(
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      if (!isMobile)
+                        FButton(
+                          label: 'Add New Trainer',
+                          onPress: () => context.push('/owner/trainers/add'),
+                          prefix: const Icon(Icons.add_rounded),
+                        ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: AppTheme.glassButton(isDark: isDark),
+                          child: Icon(
+                            Icons.filter_list_rounded,
+                            color: AppColors.primary,
+                            size: 22,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search trainers...',
+                  hintStyle: TextStyle(
+                    color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                  ),
+                  filled: true,
+                  fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      width: 1,
                     ),
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                style: TextStyle(
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
 
                   // Stats Row
                   trainersAsync.when(

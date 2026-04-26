@@ -91,10 +91,7 @@ class _WebDashboardShellState extends ConsumerState<WebDashboardShell> {
 
                     // Page Content
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(32),
-                        child: widget.child,
-                      ),
+                      child: widget.child,
                     ),
                   ],
                 ),

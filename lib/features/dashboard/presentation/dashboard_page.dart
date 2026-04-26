@@ -89,99 +89,102 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   }
 
   Widget _buildWebContent(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ─── Top Stats Row ───
-        Row(
-          children: [
-            Expanded(
-              child: WebStatCard(
-                label: 'Total Members',
-                value: '128',
-                change: '+12 this month',
-                icon: Icons.people_rounded,
-                isDark: isDark,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── Top Stats Row ───
+          Row(
+            children: [
+              Expanded(
+                child: WebStatCard(
+                  label: 'Total Members',
+                  value: '128',
+                  change: '+12 this month',
+                  icon: Icons.people_rounded,
+                  isDark: isDark,
+                ),
               ),
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: WebStatCard(
-                label: 'Active Trainers',
-                value: '24',
-                change: '+3 this month',
-                icon: Icons.fitness_center_rounded,
-                iconColor: const Color(0xFF3B82F6),
-                isDark: isDark,
+              const SizedBox(width: 24),
+              Expanded(
+                child: WebStatCard(
+                  label: 'Active Trainers',
+                  value: '24',
+                  change: '+3 this month',
+                  icon: Icons.fitness_center_rounded,
+                  iconColor: const Color(0xFF3B82F6),
+                  isDark: isDark,
+                ),
               ),
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: WebStatCard(
-                label: 'Revenue',
-                value: '₹48,500',
-                change: '+18% this month',
-                icon: Icons.payments_rounded,
-                iconColor: const Color(0xFF10B981),
-                isDark: isDark,
+              const SizedBox(width: 24),
+              Expanded(
+                child: WebStatCard(
+                  label: 'Revenue',
+                  value: '₹48,500',
+                  change: '+18% this month',
+                  icon: Icons.payments_rounded,
+                  iconColor: const Color(0xFF10B981),
+                  isDark: isDark,
+                ),
               ),
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: WebStatCard(
-                label: 'Growth Rate',
-                value: '32%',
-                change: '+5% this month',
-                icon: Icons.trending_up_rounded,
-                iconColor: const Color(0xFFF59E0B),
-                isDark: isDark,
+              const SizedBox(width: 24),
+              Expanded(
+                child: WebStatCard(
+                  label: 'Growth Rate',
+                  value: '32%',
+                  change: '+5% this month',
+                  icon: Icons.trending_up_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  isDark: isDark,
+                ),
               ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 32),
-
-        // ─── Middle Section (Charts & Details) ───
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left: Revenue Payments
-            Expanded(
-              flex: 1,
-              child: WebRevenuePaymentsCard(isDark: isDark),
-            ),
-            const SizedBox(width: 24),
-            // Right: Revenue Growth Chart
-            Expanded(
-              flex: 2,
-              child: WebRevenueChart(isDark: isDark),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 32),
-
-        // ─── Bottom Section (Attendance & Actions) ───
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left: Member Attendance
-            Expanded(
-              flex: 2,
-              child: WebAttendanceChart(isDark: isDark),
-            ),
-            const SizedBox(width: 24),
-            // Right: Quick Actions
-            Expanded(
-              flex: 1,
-              child: WebQuickActions(isDark: isDark),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 100), // Spacing for floating elements
-      ],
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+  
+          // ─── Middle Section (Charts & Details) ───
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left: Revenue Payments
+              Expanded(
+                flex: 1,
+                child: WebRevenuePaymentsCard(isDark: isDark),
+              ),
+              const SizedBox(width: 24),
+              // Right: Revenue Growth Chart
+              Expanded(
+                flex: 2,
+                child: WebRevenueChart(isDark: isDark),
+              ),
+            ],
+          ),
+  
+          const SizedBox(height: 32),
+  
+          // ─── Bottom Section (Attendance & Actions) ───
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left: Member Attendance
+              Expanded(
+                flex: 2,
+                child: WebAttendanceChart(isDark: isDark),
+              ),
+              const SizedBox(width: 24),
+              // Right: Quick Actions
+              Expanded(
+                flex: 1,
+                child: WebQuickActions(isDark: isDark),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 100), // Spacing for floating elements
+        ],
+      ),
     );
   }
 
