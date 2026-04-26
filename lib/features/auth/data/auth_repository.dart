@@ -2,10 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config.dart';
-import '../../../core/network.dart';
+import '../../../core/network/dio_client.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(ref.watch(dioProvider));
+  return AuthRepository(ref.watch(dioClientProvider));
 });
 
 class AuthRepository {

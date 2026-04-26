@@ -35,7 +35,7 @@ class GmmxApp extends ConsumerWidget {
     final foruiTheme = isDark ? AppTheme.foruiDark() : AppTheme.foruiLight();
 
     return MaterialApp.router(
-      title: 'GMMX',
+      title: 'Gmmx',
       debugShowCheckedModeBanner: false,
       supportedLocales: FLocalizations.supportedLocales,
       localizationsDelegates: const [...FLocalizations.localizationsDelegates],

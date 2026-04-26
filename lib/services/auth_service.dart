@@ -91,6 +91,29 @@ class AuthService {
     await _storage.delete(key: 'refreshToken');
   }
 
+  Future<void> sendOtp(String identifier) async {
+    try {
+      await _dio.post('/auth/send-otp', data: {
+        'identifier': identifier,
+      });
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data?['message'] ?? 'Failed to send OTP.';
+      throw Exception(errorMessage);
+    }
+  }
+
+  Future<void> verifyOtp(String identifier, String otp) async {
+    try {
+      await _dio.post('/auth/verify-otp', data: {
+        'identifier': identifier,
+        'otp': otp,
+      });
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data?['message'] ?? 'Invalid OTP.';
+      throw Exception(errorMessage);
+    }
+  }
+
   Future<String?> getToken() async {
     return await _storage.read(key: 'accessToken');
   }

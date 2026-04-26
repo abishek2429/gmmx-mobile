@@ -24,6 +24,7 @@ class AuthState {
   final bool otpSent;
   final bool isLoading;
   final bool isVerifying;
+  final bool isSendingOtp;
   final bool isGoogleVerifying;
   final UserModel? user;
   final String? errorMessage;
@@ -33,6 +34,7 @@ class AuthState {
     this.otpSent = false,
     this.isLoading = false,
     this.isVerifying = false,
+    this.isSendingOtp = false,
     this.isGoogleVerifying = false,
     this.user,
     this.errorMessage,
@@ -43,6 +45,7 @@ class AuthState {
     bool? otpSent,
     bool? isLoading,
     bool? isVerifying,
+    bool? isSendingOtp,
     bool? isGoogleVerifying,
     UserModel? user,
     String? errorMessage,
@@ -52,6 +55,7 @@ class AuthState {
       otpSent: otpSent ?? this.otpSent,
       isLoading: isLoading ?? this.isLoading,
       isVerifying: isVerifying ?? this.isVerifying,
+      isSendingOtp: isSendingOtp ?? this.isSendingOtp,
       isGoogleVerifying: isGoogleVerifying ?? this.isGoogleVerifying,
       user: user ?? this.user,
       errorMessage: errorMessage,
@@ -147,6 +151,32 @@ class AuthController extends StateNotifier<AuthState> {
         errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
       return null;
+    }
+  }
+
+  /// Send OTP
+  Future<bool> sendOtp(String identifier) async {
+    state = state.copyWith(isSendingOtp: true, errorMessage: null, identifier: identifier);
+    try {
+      await _authService.sendOtp(identifier);
+      state = state.copyWith(isSendingOtp: false, otpSent: true);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isSendingOtp: false, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
+
+  /// Verify OTP
+  Future<bool> verifyOtp(String otp) async {
+    state = state.copyWith(isVerifying: true, errorMessage: null);
+    try {
+      await _authService.verifyOtp(state.identifier, otp);
+      state = state.copyWith(isVerifying: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isVerifying: false, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return false;
     }
   }
 
