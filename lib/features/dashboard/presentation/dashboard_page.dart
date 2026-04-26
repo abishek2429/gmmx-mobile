@@ -5,8 +5,9 @@ import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/gmmx_components.dart';
-import '../../attendance/qr_attendance_page.dart';
 import '../../plans/presentation/plan_list_page.dart';
+import '../../../core/widgets/responsive_layout.dart';
+import './web/web_dashboard_shell.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -45,39 +46,96 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(
-                16, 4, 16, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAnimatedTopBar(context, isDark),
-                const SizedBox(height: 24),
-                _buildHeroCard(isDark),
-                const SizedBox(height: 24),
-                _buildPrimaryActions(context, isDark),
-                const SizedBox(height: 24),
-                _buildStatGrid(isDark),
-                const SizedBox(height: 24),
-                _buildRecentSessions(isDark),
-                const SizedBox(height: 24),
-                _buildLeaderboardCard(isDark),
-                const SizedBox(height: 24),
-                _buildPremiumCard(context, isDark),
-                const SizedBox(height: 16),
-              ],
+    return ResponsiveLayout(
+      mobile: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAnimatedTopBar(context, isDark),
+                  const SizedBox(height: 24),
+                  _buildHeroCard(isDark),
+                  const SizedBox(height: 24),
+                  _buildPrimaryActions(context, isDark),
+                  const SizedBox(height: 24),
+                  _buildStatGrid(isDark),
+                  const SizedBox(height: 24),
+                  _buildRecentSessions(isDark),
+                  const SizedBox(height: 24),
+                  _buildLeaderboardCard(isDark),
+                  const SizedBox(height: 24),
+                  _buildPremiumCard(context, isDark),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
+            Positioned(
+              right: 16,
+              bottom: 120,
+              child: _buildFloatingMenu(context),
+            ),
+          ],
+        ),
+      ),
+      web: WebDashboardShell(
+        content: _buildWebContent(isDark),
+      ),
+    );
+  }
+
+  Widget _buildWebContent(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // KPIs Grid
+        Row(
+          children: [
+            Expanded(child: _buildStatItem('Total Members', '128', '+12 this month', Icons.people_rounded)),
+            const SizedBox(width: 24),
+            Expanded(child: _buildStatItem('Active Trainers', '24', '+3 this month', Icons.fitness_center_rounded)),
+            const SizedBox(width: 24),
+            Expanded(child: _buildStatItem('Revenue', '₹48,500', '+18% this month', Icons.payments_rounded)),
+            const SizedBox(width: 24),
+            Expanded(child: _buildStatItem('Growth Rate', '32%', '+5% this month', Icons.trending_up_rounded)),
+          ],
+        ),
+        const SizedBox(height: 32),
+        // Charts and other sections will go here
+        const Text('Welcome to GMMX Premium Web Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, String change, IconData icon) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: AppTheme.glassCard(radius: 20, isDark: isDark),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 24),
+              ),
+              Text(change, style: const TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold)),
+            ],
           ),
-          Positioned(
-            right: 16,
-            bottom: 120,
-            child: _buildFloatingMenu(context),
-          ),
+          const SizedBox(height: 20),
+          Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
