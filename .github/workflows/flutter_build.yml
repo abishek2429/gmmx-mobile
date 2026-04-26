@@ -3,6 +3,11 @@ name: Flutter Build (APK + Web)
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -28,16 +33,25 @@ jobs:
       - name: Build Web
         run: flutter build web --release
 
-      # 📦 Upload APK
-      - name: Upload APK
+      # 📦 Upload APK Artifact (Zipped by default)
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      # 📦 Upload Web build
+      # 📦 Upload Web build Artifact
       - name: Upload Web Build
         uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: build/web
+
+      # 🚀 Create GitHub Release and upload the APK directly (Only on Tags)
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
