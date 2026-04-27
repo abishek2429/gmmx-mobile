@@ -48,30 +48,42 @@ class ProfilePage extends ConsumerWidget {
                     children: [
                       // Avatar
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 90,
+                        height: 90,
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryHover],
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 2,
                           ),
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
                         ),
-                        child: Center(
-                          child: Text(
-                            (user?.fullName.isNotEmpty ?? false)
-                                ? user!.fullName[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primary, AppColors.primaryHover],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.4),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              (user?.fullName.isNotEmpty ?? false)
+                                  ? user!.fullName[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
                         ),
@@ -97,21 +109,44 @@ class ProfilePage extends ConsumerWidget {
                       const SizedBox(height: 12),
                       // Role badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: _roleGradient(role),
+                          color: _roleColor(role).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _roleColor(role).withOpacity(0.3),
+                            width: 1,
                           ),
-                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(
-                          _roleLabel(role),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _roleColor(role),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _roleColor(role),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _roleLabel(role),
+                              style: TextStyle(
+                                color: _roleColor(role),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -174,9 +209,8 @@ class ProfilePage extends ConsumerWidget {
                                 size: 18,
                                 color: isDark ? AppColors.textHintDark : AppColors.textHint),
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Notification settings coming soon!')),
-                              );
+                              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+                              context.push('/$slug/owner/settings/notifications');
                             },
                           ),
                           _SettingsItem(
@@ -185,7 +219,10 @@ class ProfilePage extends ConsumerWidget {
                             trailing: Icon(Icons.chevron_right_rounded,
                                 size: 18,
                                 color: isDark ? AppColors.textHintDark : AppColors.textHint),
-                            onTap: () {},
+                            onTap: () {
+                              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+                              context.push('/$slug/owner/settings/privacy');
+                            },
                           ),
                           _SettingsItem(
                             icon: Icons.help_outline_rounded,
@@ -193,7 +230,10 @@ class ProfilePage extends ConsumerWidget {
                             trailing: Icon(Icons.chevron_right_rounded,
                                 size: 18,
                                 color: isDark ? AppColors.textHintDark : AppColors.textHint),
-                            onTap: () {},
+                            onTap: () {
+                              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+                              context.push('/$slug/owner/settings/help');
+                            },
                           ),
                         ],
                       ),
@@ -243,19 +283,19 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  List<Color> _roleGradient(String role) {
+  Color _roleColor(String role) {
     switch (role) {
-      case 'trainer': return [const Color(0xFF1D4ED8), const Color(0xFF3B82F6)];
-      case 'client':  return [const Color(0xFF059669), const Color(0xFF10B981)];
-      default:        return [AppColors.primary, AppColors.primaryHover]; // owner
+      case 'trainer': return const Color(0xFF3B82F6);
+      case 'client':  return const Color(0xFF10B981);
+      default:        return AppColors.primary;
     }
   }
 
   String _roleLabel(String role) {
     switch (role) {
-      case 'trainer': return '🏋️ TRAINER';
-      case 'client':  return '💪 MEMBER';
-      default:        return '👑 GYM OWNER';
+      case 'trainer': return 'TRAINER';
+      case 'client':  return 'MEMBER';
+      default:        return 'GYM OWNER';
     }
   }
 }

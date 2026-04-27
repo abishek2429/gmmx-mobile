@@ -16,7 +16,9 @@ import '../../features/dashboard/presentation/screens/placeholder_screen.dart';
 import '../../features/client/presentation/client_list_page.dart';
 import '../../features/trainer/presentation/trainer_list_page.dart';
 import '../../features/client/presentation/client_creation_page.dart';
+import '../../features/client/presentation/client_edit_page.dart';
 import '../../features/trainer/presentation/trainer_creation_page.dart';
+import '../../features/trainer/presentation/trainer_edit_page.dart';
 import '../../features/plans/presentation/plans_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/workout/presentation/workout_plan_page.dart';
@@ -31,6 +33,8 @@ import '../../features/auth/presentation/auth_controller.dart';
 import '../../models/user_model.dart';
 import '../providers/theme_provider.dart';
 import '../../features/admin/presentation/super_admin_dashboard.dart';
+import '../../features/messaging/presentation/internal_messaging_page.dart';
+import '../../features/profile/presentation/settings_sub_pages.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _ownerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'ownerHome');
@@ -349,9 +353,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ClientCreationPage(),
       ),
       GoRoute(
+        path: '/:slug/owner/members/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final client = state.extra as Client;
+          return ClientEditPage(client: client);
+        },
+      ),
+      GoRoute(
         path: '/:slug/owner/trainers/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const TrainerCreationPage(),
+      ),
+      GoRoute(
+        path: '/:slug/owner/trainers/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final trainer = state.extra as UserModel;
+          return TrainerEditPage(trainer: trainer);
+        },
+      ),
+      GoRoute(
+        path: '/:slug/messages/:userId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => InternalMessagingPage(
+          recipientId: state.pathParameters['userId']!,
+          recipientName: state.uri.queryParameters['name'] ?? 'User',
+        ),
+      ),
+      GoRoute(
+        path: '/:slug/owner/settings/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationSettingsPage(),
+      ),
+      GoRoute(
+        path: '/:slug/owner/settings/privacy',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PrivacySecurityPage(),
+      ),
+      GoRoute(
+        path: '/:slug/owner/settings/help',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HelpSupportPage(),
       ),
       GoRoute(
         path: '/scanner',

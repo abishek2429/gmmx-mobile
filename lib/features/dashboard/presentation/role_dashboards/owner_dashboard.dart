@@ -143,30 +143,40 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
       children: [
         // Avatar with Glow
         Container(
-          width: 56,
-          height: 56,
+          width: 60,
+          height: 60,
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              width: 1.5,
             ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
-          child: Center(
-            child: Text(
-              name.isNotEmpty ? name[0].toUpperCase() : 'O',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                name.isNotEmpty ? name[0].toUpperCase() : 'O',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ),
@@ -369,19 +379,25 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'WEEKLY REVENUE',
-                    style: TextStyle(
-                      color: Colors.white70, 
-                      fontSize: 10, 
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'WEEKLY REVENUE',
+                        style: TextStyle(
+                          color: Colors.white70, 
+                          fontSize: 10, 
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.info_outline_rounded, color: Colors.white38, size: 12),
+                    ],
                   ),
                   SizedBox(height: 6),
                   Text(
                     '₹4,20,000',
-                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
+                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
                   ),
                 ],
               ),
@@ -748,23 +764,51 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('BROADCAST MESSAGE'),
-        content: const TextField(
-          decoration: InputDecoration(
-            hintText: 'Enter message to all members...',
-            border: OutlineInputBorder(),
-          ),
-          maxLines: 3,
+        backgroundColor: ref.watch(themeModeProvider) == ThemeMode.dark ? const Color(0xFF101018) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('BROADCAST MESSAGE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Send a notification to all members', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Enter message...',
+                filled: true,
+                fillColor: ref.watch(themeModeProvider) == ThemeMode.dark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+              maxLines: 4,
+            ),
+          ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Broadcasting via WhatsApp...')));
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('SEND', style: TextStyle(color: Colors.white)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('CANCEL', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold)),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8, bottom: 8),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Broadcast sent via Internal Messaging'),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: const Text('SEND', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
           ),
         ],
       ),

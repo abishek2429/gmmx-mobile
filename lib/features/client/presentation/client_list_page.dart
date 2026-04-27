@@ -11,9 +11,8 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-import '../../../../core/services/whatsapp_service.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../auth/providers/gym_provider.dart';
+import '../../../../core/widgets/responsive_layout.dart';
 
 // Client model
 class Client {
@@ -22,6 +21,7 @@ class Client {
   final String email;
   final String mobile;
   final String assignedTrainer;
+  final String? assignedTrainerId;
   final DateTime joinedAt;
   final int attendanceCount;
   final bool isActive;
@@ -32,6 +32,7 @@ class Client {
     required this.email,
     required this.mobile,
     required this.assignedTrainer,
+    this.assignedTrainerId,
     required this.joinedAt,
     required this.attendanceCount,
     required this.isActive,
@@ -51,10 +52,11 @@ final clientListProvider = FutureProvider<List<Client>>((ref) async {
         name: json['fullName'] ?? 'No Name',
         email: json['email'] ?? '',
         mobile: json['mobile'] ?? '',
-        assignedTrainer: json['assignedTrainerId'] ?? 'Unassigned',
+        assignedTrainer: json['assignedTrainerName'] ?? 'Unassigned',
+        assignedTrainerId: json['assignedTrainerId'],
         joinedAt: json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : DateTime.now(),
         attendanceCount: 0,
-        isActive: json['isActive'] ?? true,
+        isActive: json['status'] == 'ACTIVE',
       );
     }).toList();
   } else {
@@ -419,7 +421,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class ClientCard extends StatelessWidget {
+class ClientCard extends ConsumerWidget {
   const ClientCard({
     super.key,
     required this.client,
@@ -432,7 +434,7 @@ class ClientCard extends StatelessWidget {
   final bool isDark;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -477,10 +479,11 @@ class ClientCard extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => WhatsappService.sendMessage(
-                    phone: client.mobile,
-                    message: "Hi ${client.name}! This is GMMX Gym. How are you doing today? 💪",
-                  ),
+                  onTap: () {
+                    final gym = ref.read(gymProvider).value;
+                    final slug = gym?.subdomain ?? 'dashboard';
+                    context.push('/$slug/messages/${client.id}?name=${Uri.encodeComponent(client.name)}');
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     margin: const EdgeInsets.only(right: 12),

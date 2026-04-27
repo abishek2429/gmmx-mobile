@@ -5,7 +5,7 @@ import '../../../../models/user_model.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-import '../../../../core/services/whatsapp_service.dart';
+import '../../auth/providers/gym_provider.dart';
 
 class TrainerDetailsPage extends ConsumerWidget {
   const TrainerDetailsPage({
@@ -58,7 +58,7 @@ class TrainerDetailsPage extends ConsumerWidget {
                           const SizedBox(height: 32),
                           _buildContactSection(isDark),
                           const SizedBox(height: 32),
-                          _buildActions(isDark),
+                          _buildActions(isDark, ref, context),
                           const SizedBox(height: 100),
                         ],
                       ),
@@ -193,12 +193,15 @@ class TrainerDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildActions(bool isDark) {
+  Widget _buildActions(bool isDark, WidgetRef ref, BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () => WhatsappService.sendMessage(phone: trainer.phone, message: "Hi ${trainer.fullName}!"),
+            onPressed: () {
+              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+              context.push('/$slug/messages/${trainer.id}?name=${Uri.encodeComponent(trainer.fullName)}');
+            },
             icon: const Icon(Icons.chat_bubble_rounded, size: 18),
             label: const Text('MESSAGE', style: TextStyle(fontWeight: FontWeight.w900)),
             style: ElevatedButton.styleFrom(
@@ -212,7 +215,10 @@ class TrainerDetailsPage extends ConsumerWidget {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+              context.push('/$slug/owner/trainers/edit', extra: trainer);
+            },
             icon: const Icon(Icons.edit_rounded, size: 18),
             label: const Text('EDIT', style: TextStyle(fontWeight: FontWeight.w900)),
             style: ElevatedButton.styleFrom(

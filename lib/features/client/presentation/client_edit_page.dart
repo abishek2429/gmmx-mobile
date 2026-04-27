@@ -12,21 +12,30 @@ import '../../../../core/providers/theme_provider.dart';
 import '../../trainer/presentation/trainer_list_page.dart';
 import '../../../models/user_model.dart';
 
-class ClientCreationPage extends ConsumerStatefulWidget {
-  const ClientCreationPage({super.key});
+class ClientEditPage extends ConsumerStatefulWidget {
+  final Client client;
+  const ClientEditPage({super.key, required this.client});
 
   @override
-  ConsumerState<ClientCreationPage> createState() =>
-      _ClientCreationPageState();
+  ConsumerState<ClientEditPage> createState() => _ClientEditPageState();
 }
 
-class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
+class _ClientEditPageState extends ConsumerState<ClientEditPage> {
   final formKey = GlobalKey<FormState>();
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final phoneController = TextEditingController();
+  late TextEditingController nameController;
+  late TextEditingController emailController;
+  late TextEditingController phoneController;
   String? selectedTrainerId;
   bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.client.name);
+    emailController = TextEditingController(text: widget.client.email);
+    phoneController = TextEditingController(text: widget.client.mobile);
+    selectedTrainerId = widget.client.assignedTrainer != 'Unassigned' ? widget.client.assignedTrainer : null;
+  }
 
   @override
   void dispose() {
@@ -36,15 +45,9 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
     super.dispose();
   }
 
-  void handleCreateClient() {
+  void handleUpdateClient() {
     if (!formKey.currentState!.validate()) return;
-    if (selectedTrainerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a trainer')),
-      );
-      return;
-    }
-
+    
     setState(() => isLoading = true);
 
     Future.microtask(() async {
@@ -56,7 +59,7 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
 
         final dio = ref.read(dioClientProvider);
         
-        final response = await dio.post('/api/members', 
+        await dio.put('/api/members/${widget.client.id}', 
           data: {
             'fullName': nameController.text,
             'email': emailController.text,
@@ -80,7 +83,7 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to add member: $errorMessage'),
+              content: Text('Failed to update member: $errorMessage'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -98,7 +101,6 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
         decoration: AppTheme.pageBackground(isDark: isDark),
         child: Stack(
           children: [
-            // Background Glow
             Positioned.fill(
               child: DecoratedBox(
                 decoration: AppTheme.foregroundGlow(isDark: isDark),
@@ -107,7 +109,6 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
             SafeArea(
               child: Column(
                 children: [
-                  // Header
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     child: Row(
@@ -121,15 +122,6 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                           ),
                         ),
                         const Spacer(),
-                        Text(
-                          'Step 1 of 1',
-                          style: TextStyle(
-                            color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 20),
                       ],
                     ),
                   ),
@@ -140,7 +132,7 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                       children: [
                         const SizedBox(height: 10),
                         Text(
-                          'Add New Member',
+                          'Edit Member',
                           style: TextStyle(
                             color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
                             fontSize: 32,
@@ -150,7 +142,7 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Register a new member to the gym',
+                          'Update details for ${widget.client.name}',
                           style: TextStyle(
                             color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                             fontSize: 15,
@@ -170,7 +162,6 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                 isDark: isDark,
                                 validator: (value) {
                                   if (value?.isEmpty ?? true) return 'Name is required';
-                                  if ((value?.length ?? 0) < 3) return 'Min 3 characters';
                                   return null;
                                 },
                               ),
@@ -184,9 +175,6 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                 isDark: isDark,
                                 validator: (value) {
                                   if (value?.isEmpty ?? true) return 'Email is required';
-                                  if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value ?? '')) {
-                                    return 'Invalid email format';
-                                  }
                                   return null;
                                 },
                               ),
@@ -200,9 +188,6 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                 isDark: isDark,
                                 validator: (value) {
                                   if (value?.isEmpty ?? true) return 'Phone is required';
-                                  if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value ?? '')) {
-                                    return 'Invalid 10-digit phone number';
-                                  }
                                   return null;
                                 },
                               ),
@@ -216,85 +201,57 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                                ref.watch(trainerListProvider).when(
-                                  data: (trainers) => Container(
-                                    decoration: BoxDecoration(
-                                      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                                        width: 1,
-                                      ),
+                              ref.watch(trainerListProvider).when(
+                                data: (trainers) => Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                      width: 1,
                                     ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        value: selectedTrainerId,
-                                        isExpanded: true,
-                                        hint: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                                          child: Text(
-                                            'Select trainer',
-                                            style: TextStyle(
-                                              color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                                            ),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: selectedTrainerId,
+                                      isExpanded: true,
+                                      hint: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Text(
+                                          'Select trainer',
+                                          style: TextStyle(
+                                            color: isDark ? AppColors.textHintDark : AppColors.textHint,
                                           ),
                                         ),
-                                        onChanged: (value) {
-                                          setState(() => selectedTrainerId = value);
-                                        },
-                                        items: trainers
-                                            .map((trainer) => DropdownMenuItem<String>(
-                                                  value: trainer.id,
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                                    child: Text(
-                                                      trainer.fullName,
-                                                      style: TextStyle(
-                                                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                                                      ),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() => selectedTrainerId = value);
+                                      },
+                                      items: trainers
+                                          .map((trainer) => DropdownMenuItem<String>(
+                                                value: trainer.id,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                  child: Text(
+                                                    trainer.fullName,
+                                                    style: TextStyle(
+                                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
                                                     ),
                                                   ),
-                                                ))
-                                            .toList(),
-                                        dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                  error: (err, _) => Text('Error loading trainers: $err', style: const TextStyle(color: AppColors.error)),
                                 ),
-                              const SizedBox(height: 40),
-                              Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: AppColors.info.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppColors.info.withValues(alpha: 0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.info_outline_rounded, color: AppColors.info, size: 20),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'Member will use their mobile number and a default PIN (1234) to access their mobile app. They can change it later in their profile.',
-                                        style: TextStyle(
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                                          fontSize: 12,
-                                          height: 1.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                error: (err, _) => Text('Error loading trainers', style: const TextStyle(color: AppColors.error)),
                               ),
                               const SizedBox(height: 40),
                               FilledButton(
-                                onPressed: isLoading ? null : handleCreateClient,
+                                onPressed: isLoading ? null : handleUpdateClient,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   minimumSize: const Size(double.infinity, 56),
@@ -313,7 +270,7 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                         ),
                                       )
                                     : const Text(
-                                        'Create Account',
+                                        'Save Changes',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -433,17 +390,7 @@ class _FormFieldState extends State<_FormField> {
                 width: 1.5,
               ),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: widget.isDark ? AppColors.errorDark : AppColors.error,
-                width: 1,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
           style: TextStyle(
             color: widget.isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,

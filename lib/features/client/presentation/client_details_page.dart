@@ -8,7 +8,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
-import '../../../../core/services/whatsapp_service.dart';
+import '../../auth/providers/gym_provider.dart';
 import '../../../../core/network/dio_client.dart';
 
 class ClientDetailsPage extends ConsumerStatefulWidget {
@@ -48,6 +48,14 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    
+    // Watch the list provider to get the latest data for this client
+    final clientAsync = ref.watch(clientListProvider);
+    final currentClient = clientAsync.when(
+      data: (list) => list.firstWhere((c) => c.id == widget.client.id, orElse: () => widget.client),
+      loading: () => widget.client,
+      error: (_, __) => widget.client,
+    );
 
     return Scaffold(
       body: Container(
@@ -80,6 +88,10 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
                           icon: Icon(Icons.more_horiz_rounded, color: isDark ? Colors.white : AppColors.textPrimary),
                           onSelected: (value) {
                             if (value == 'delete') _deleteMember();
+                            if (value == 'edit') {
+                              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+                              context.push('/$slug/owner/members/edit', extra: currentClient);
+                            }
                           },
                           itemBuilder: (context) => [
                             const PopupMenuItem(value: 'edit', child: Text('Edit Member')),
@@ -94,13 +106,13 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
                       child: Column(
                         children: [
                           const SizedBox(height: 20),
-                          _buildProfileHeader(isDark),
+                          _buildProfileHeader(currentClient, isDark),
                           const SizedBox(height: 32),
-                          _buildStatsGrid(isDark),
+                          _buildStatsGrid(currentClient, isDark),
                           const SizedBox(height: 32),
-                          _buildContactSection(isDark),
+                          _buildContactSection(currentClient, isDark),
                           const SizedBox(height: 32),
-                          _buildActions(isDark),
+                          _buildActions(currentClient, isDark),
                           const SizedBox(height: 100),
                         ],
                       ),
@@ -115,7 +127,7 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
     );
   }
 
-  Widget _buildProfileHeader(bool isDark) {
+  Widget _buildProfileHeader(Client client, bool isDark) {
     return Column(
       children: [
         Container(
@@ -140,7 +152,7 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
         ),
         const SizedBox(height: 20),
         Text(
-          widget.client.name,
+          client.name,
           style: TextStyle(
             color: isDark ? Colors.white : AppColors.textPrimary,
             fontSize: 24,
@@ -151,15 +163,15 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: widget.client.isActive 
+            color: client.isActive 
                 ? AppColors.success.withValues(alpha: 0.1) 
                 : AppColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            widget.client.isActive ? 'ACTIVE' : 'INACTIVE',
+            client.isActive ? 'ACTIVE' : 'INACTIVE',
             style: TextStyle(
-              color: widget.client.isActive ? AppColors.success : AppColors.error,
+              color: client.isActive ? AppColors.success : AppColors.error,
               fontSize: 10,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
@@ -170,12 +182,12 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
     );
   }
 
-  Widget _buildStatsGrid(bool isDark) {
+  Widget _buildStatsGrid(Client client, bool isDark) {
     return Row(
       children: [
-        Expanded(child: _statCard('ATTENDANCE', widget.client.attendanceCount.toString(), Icons.calendar_today_rounded, isDark)),
+        Expanded(child: _statCard('ATTENDANCE', client.attendanceCount.toString(), Icons.calendar_today_rounded, isDark)),
         const SizedBox(width: 16),
-        Expanded(child: _statCard('TRAINER', widget.client.assignedTrainer, Icons.fitness_center_rounded, isDark)),
+        Expanded(child: _statCard('TRAINER', client.assignedTrainer, Icons.fitness_center_rounded, isDark)),
       ],
     );
   }
@@ -206,15 +218,15 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
     );
   }
 
-  Widget _buildContactSection(bool isDark) {
+  Widget _buildContactSection(Client client, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('CONTACT INFO', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         const SizedBox(height: 16),
-        _contactTile(Icons.email_rounded, 'Email', widget.client.email, isDark),
+        _contactTile(Icons.email_rounded, 'Email', client.email, isDark),
         const SizedBox(height: 12),
-        _contactTile(Icons.phone_rounded, 'Phone', widget.client.mobile, isDark),
+        _contactTile(Icons.phone_rounded, 'Phone', client.mobile, isDark),
       ],
     );
   }
@@ -239,12 +251,15 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
     );
   }
 
-  Widget _buildActions(bool isDark) {
+  Widget _buildActions(Client client, bool isDark) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () => WhatsappService.sendMessage(phone: widget.client.mobile, message: "Hi ${widget.client.name}!"),
+            onPressed: () {
+              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+              context.push('/$slug/messages/${client.id}?name=${Uri.encodeComponent(client.name)}');
+            },
             icon: const Icon(Icons.chat_bubble_rounded, size: 18),
             label: const Text('MESSAGE', style: TextStyle(fontWeight: FontWeight.w900)),
             style: ElevatedButton.styleFrom(
@@ -258,7 +273,10 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+              context.push('/$slug/owner/members/edit', extra: client);
+            },
             icon: const Icon(Icons.edit_rounded, size: 18),
             label: const Text('EDIT', style: TextStyle(fontWeight: FontWeight.w900)),
             style: ElevatedButton.styleFrom(
