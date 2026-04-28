@@ -51,14 +51,45 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     }
   }
 
-  void _manageGym(String id, String name) {
-    // Navigate to Gym Users management
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => GymUsersScreen(gymId: id, gymName: name),
+  Future<void> _deleteGym(String id, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Gym?', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: Text('Are you sure you want to permanently delete "$name"? This will remove all users, members, and data associated with this gym. This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
       ),
     );
+
+    if (confirmed == true) {
+      try {
+        final dio = ref.read(dioClientProvider);
+        await dio.delete('/api/super-admin/gyms/$id');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gym "$name" deleted successfully'), backgroundColor: AppColors.error),
+          );
+          _loadData();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete gym: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -68,11 +99,17 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('System Administration', style: TextStyle(fontWeight: FontWeight.w900)),
+        centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _loadData,
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Container(
@@ -82,9 +119,18 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
           child: isLoading 
             ? const Center(child: CircularProgressIndicator())
             : error != null
-              ? Center(child: Text('Error: $error', style: const TextStyle(color: AppColors.error)))
+              ? Center(child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.error),
+                    const SizedBox(height: 16),
+                    Text('Error: $error', style: const TextStyle(color: AppColors.error)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
+                  ],
+                ))
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                   itemCount: gyms.length,
                   itemBuilder: (context, index) {
                     final gym = gyms[index];
@@ -92,6 +138,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
                       gym: gym,
                       isDark: isDark,
                       onManage: () => _manageGym(gym['id'], gym['name']),
+                      onDelete: () => _deleteGym(gym['id'], gym['name']),
                     );
                   },
                 ),
@@ -105,62 +152,144 @@ class _GymCard extends StatelessWidget {
   final dynamic gym;
   final bool isDark;
   final VoidCallback onManage;
+  final VoidCallback onDelete;
 
-  const _GymCard({required this.gym, required this.isDark, required this.onManage});
+  const _GymCard({
+    required this.gym, 
+    required this.isDark, 
+    required this.onManage,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        boxShadow: isDark ? [] : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        gym['name'],
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Icon(Icons.fitness_center_rounded, color: Colors.white, size: 28),
                       ),
-                      Text(
-                        '/${gym['subdomain']}',
-                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              gym['name'],
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'gmmx.app/${gym['subdomain']}',
+                              style: TextStyle(
+                                color: AppColors.primary, 
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          gym['plan'],
+                          style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      _StatBadge(
+                        icon: Icons.people_rounded,
+                        value: '${gym['userCount']}',
+                        label: 'Active Users',
+                        isDark: isDark,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatBadge(
+                          icon: Icons.alternate_email_rounded,
+                          value: gym['ownerEmail'] ?? 'No Email',
+                          label: 'Owner Contact',
+                          isDark: isDark,
+                          isLong: true,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    gym['plan'],
-                    style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w800),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.manage_accounts_rounded, color: AppColors.primary, size: 24),
-                  onPressed: onManage,
-                ),
-              ],
+                ],
+              ),
             ),
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatItem(label: 'Users', value: '${gym['userCount']}', icon: Icons.people_outline_rounded),
-                _StatItem(label: 'Owner', value: gym['ownerEmail'] ?? 'N/A', icon: Icons.email_outlined, isSmall: true),
-              ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey[50],
+                border: Border(top: BorderSide(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05))),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: onManage,
+                      icon: const Icon(Icons.manage_accounts_rounded, size: 18),
+                      label: const Text('Manage Users', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.error.withOpacity(0.1),
+                      foregroundColor: AppColors.error,
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -169,23 +298,53 @@ class _GymCard extends StatelessWidget {
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
+class _StatBadge extends StatelessWidget {
   final IconData icon;
-  final bool isSmall;
+  final String value;
+  final String label;
+  final bool isDark;
+  final bool isLong;
 
-  const _StatItem({required this.label, required this.value, required this.icon, this.isSmall = false});
+  const _StatBadge({
+    required this.icon, 
+    required this.value, 
+    required this.label, 
+    required this.isDark,
+    this.isLong = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey),
-        const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: isSmall ? 11 : 14, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black26 : Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: isLong ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: isDark ? Colors.white38 : Colors.grey[600]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value, 
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  label, 
+                  style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.grey[500], fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
