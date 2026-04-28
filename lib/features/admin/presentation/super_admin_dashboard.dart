@@ -51,6 +51,15 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     }
   }
 
+  void _manageGym(String id, String name) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GymUsersScreen(gymId: id, gymName: name),
+      ),
+    );
+  }
+
   Future<void> _deleteGym(String id, String name) async {
     final confirmed = await showDialog<bool>(
       context: context,
