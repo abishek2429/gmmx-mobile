@@ -12,6 +12,7 @@ import '../../../../core/widgets/upgrade_gate.dart';
 import '../../../../models/plan_model.dart';
 import '../../../../services/session_service.dart';
 import '../../../auth/presentation/auth_controller.dart';
+import '../../../auth/providers/gym_provider.dart';
 
 class OwnerDashboard extends ConsumerStatefulWidget {
   const OwnerDashboard({super.key});
@@ -109,7 +110,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
-                        child: _buildRevenueChart(isDark),
+                        child: _buildRevenueChart(isDark, statsAsync.value),
                       ),
                     ),
 
@@ -295,9 +296,17 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
         );
       },
       child: GestureDetector(
-        onTap: !data.isAccessible
-            ? () => context.push('/owner/plans')
-            : null,
+        onTap: () {
+          final gym = ref.read(gymProvider).value;
+          final slug = gym?.subdomain ?? 'dashboard';
+          if (!data.isAccessible) {
+            context.push('/$slug/owner/plans');
+          } else if (data.label == 'Active Trainers') {
+            context.push('/$slug/owner/trainers');
+          } else if (data.label == 'Total Members') {
+            context.go('/$slug/owner/members');
+          }
+        },
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: AppTheme.cardDecoration(isDark: isDark, radius: 24),
@@ -349,7 +358,10 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
     );
   }
 
-  Widget _buildRevenueChart(bool isDark) {
+  Widget _buildRevenueChart(bool isDark, OwnerStats? stats) {
+    final weeklyRevenue = stats?.weeklyRevenue ?? [];
+    final totalWeekly = stats?.totalWeeklyRevenue ?? '₹0';
+    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -376,10 +388,10 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
                       Text(
                         'WEEKLY REVENUE',
@@ -394,10 +406,10 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                       Icon(Icons.info_outline_rounded, color: Colors.white38, size: 12),
                     ],
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
-                    '₹4,20,000',
-                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
+                    totalWeekly,
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
                   ),
                 ],
               ),
@@ -411,7 +423,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                   children: [
                     Icon(Icons.trending_up_rounded, color: Colors.white, size: 16),
                     SizedBox(width: 4),
-                    Text('+12%', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                    Text('REAL', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ),
@@ -420,29 +432,30 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
           const SizedBox(height: 24),
           SizedBox(
             height: 120,
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: const FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3), FlSpot(1, 1.5), FlSpot(2, 5),
-                      FlSpot(3, 2.5), FlSpot(4, 4), FlSpot(5, 3), FlSpot(6, 4.5),
+            child: weeklyRevenue.isEmpty 
+              ? const Center(child: Text('No data yet', style: TextStyle(color: Colors.white54)))
+              : LineChart(
+                  LineChartData(
+                    gridData: const FlGridData(show: false),
+                    titlesData: const FlTitlesData(show: false),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: weeklyRevenue.asMap().entries.map((e) {
+                          return FlSpot(e.key.toDouble(), e.value.amount);
+                        }).toList(),
+                        isCurved: true,
+                        color: Colors.white,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.white.withValues(alpha: 0.15),
+                        ),
+                      ),
                     ],
-                    isCurved: true,
-                    color: Colors.white,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
           ),
         ],
       ),
@@ -470,7 +483,11 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                 label: 'Member',
                 color: AppColors.primary,
                 isDark: isDark,
-                onTap: () => context.push('/owner/members/add'),
+                onTap: () {
+                  final gym = ref.read(gymProvider).value;
+                  final slug = gym?.subdomain ?? 'dashboard';
+                  context.push('/$slug/owner/members/add');
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -481,7 +498,11 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                       label: 'Trainer',
                       color: AppColors.info,
                       isDark: isDark,
-                      onTap: () => context.push('/owner/trainers/add'),
+                      onTap: () {
+                        final gym = ref.read(gymProvider).value;
+                        final slug = gym?.subdomain ?? 'dashboard';
+                        context.push('/$slug/owner/trainers/add');
+                      },
                     )
                   : _buildLockedActionCard(
                       icon: Icons.fitness_center_rounded,
@@ -497,7 +518,11 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                 label: 'Scan',
                 color: AppColors.success,
                 isDark: isDark,
-                onTap: () => context.push('/scanner'),
+                onTap: () {
+                  final gym = ref.read(gymProvider).value;
+                  final slug = gym?.subdomain ?? 'dashboard';
+                  context.push('/$slug/scanner');
+                },
               ),
             ),
           ],
@@ -531,7 +556,11 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                 label: 'Plans',
                 color: Colors.teal,
                 isDark: isDark,
-                onTap: () => context.push('/owner/membership-plans'),
+                onTap: () {
+                  final gym = ref.read(gymProvider).value;
+                  final slug = gym?.subdomain ?? 'dashboard';
+                  context.push('/$slug/owner/membership-plans');
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -541,7 +570,11 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                 label: 'Equipment',
                 color: Colors.blueGrey,
                 isDark: isDark,
-                onTap: () => context.push('/owner/equipment'),
+                onTap: () {
+                  final gym = ref.read(gymProvider).value;
+                  final slug = gym?.subdomain ?? 'dashboard';
+                  context.go('/$slug/owner/equipment');
+                },
               ),
             ),
           ],

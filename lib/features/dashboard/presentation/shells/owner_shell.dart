@@ -38,8 +38,8 @@ class OwnerShell extends StatelessWidget {
               label: Text('Members'),
             ),
             FBottomNavigationBarItem(
-              icon: Icon(Icons.fitness_center_rounded),
-              label: Text('Trainers'),
+              icon: Icon(Icons.settings_input_component_rounded),
+              label: Text('Equipment'),
             ),
             FBottomNavigationBarItem(
               icon: Icon(Icons.payments_rounded),

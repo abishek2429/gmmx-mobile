@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/providers/theme_provider.dart';
+import '../../../../auth/providers/gym_provider.dart';
 
 class WebSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -81,7 +82,7 @@ class WebSidebar extends ConsumerWidget {
                   isDark: isDark,
                 ),
                 _SidebarItem(
-                  label: 'Trainers',
+                  label: 'Equipment',
                   icon: Icons.fitness_center_rounded,
                   isActive: selectedIndex == 2,
                   onTap: () => onItemSelected(2),
@@ -95,24 +96,17 @@ class WebSidebar extends ConsumerWidget {
                   isDark: isDark,
                 ),
                 _SidebarItem(
-                  label: 'Reports',
-                  icon: Icons.bar_chart_rounded,
+                  label: 'Profile',
+                  icon: Icons.person_outline_rounded,
                   isActive: selectedIndex == 4,
                   onTap: () => onItemSelected(4),
-                  isDark: isDark,
-                ),
-                _SidebarItem(
-                  label: 'Broadcast',
-                  icon: Icons.campaign_outlined,
-                  isActive: selectedIndex == 5,
-                  onTap: () => onItemSelected(5),
                   isDark: isDark,
                 ),
                 const SizedBox(height: 32),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
-                    'SYSTEM',
+                    'EXTRA',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -122,10 +116,22 @@ class WebSidebar extends ConsumerWidget {
                   ),
                 ),
                 _SidebarItem(
+                  label: 'Trainers',
+                  icon: Icons.assignment_ind_outlined,
+                  isActive: false,
+                  onTap: () {
+                    final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+                    context.push('/$slug/owner/trainers');
+                  },
+                  isDark: isDark,
+                ),
+                _SidebarItem(
                   label: 'Settings',
                   icon: Icons.settings_outlined,
-                  isActive: selectedIndex == 6,
-                  onTap: () => onItemSelected(6),
+                  isActive: false,
+                  onTap: () {
+                    onItemSelected(4); // Go to Profile/Settings branch
+                  },
                   isDark: isDark,
                 ),
               ],

@@ -62,10 +62,10 @@ class _GymLookupScreenState extends ConsumerState<GymLookupScreen> {
     final success = await ref.read(gymProvider.notifier).lookupGym(gymId);
     
     if (mounted) {
+      setState(() => _isLoading = false);
       if (success) {
         context.go('/login');
       } else {
-        setState(() => _isLoading = false);
         final gymState = ref.read(gymProvider);
         final errorMsg = gymState.maybeWhen(
           error: (err, _) => err.toString(),

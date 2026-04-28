@@ -3,17 +3,35 @@ import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../auth/presentation/auth_controller.dart';
 
+class DailyRevenue {
+  final String day;
+  final double amount;
+
+  DailyRevenue({required this.day, required this.amount});
+
+  factory DailyRevenue.fromJson(Map<String, dynamic> json) {
+    return DailyRevenue(
+      day: json['day'],
+      amount: (json['amount'] as num).toDouble(),
+    );
+  }
+}
+
 class OwnerStats {
   final String totalMembers;
   final String activeTrainers;
   final String monthlyRevenue;
   final String newMembersThisMonth;
+  final List<DailyRevenue> weeklyRevenue;
+  final String totalWeeklyRevenue;
 
   OwnerStats({
     required this.totalMembers,
     required this.activeTrainers,
     required this.monthlyRevenue,
     required this.newMembersThisMonth,
+    required this.weeklyRevenue,
+    required this.totalWeeklyRevenue,
   });
 
   factory OwnerStats.fromJson(Map<String, dynamic> json) {
@@ -22,6 +40,11 @@ class OwnerStats {
       activeTrainers: json['activeTrainers'],
       monthlyRevenue: json['monthlyRevenue'],
       newMembersThisMonth: json['newMembersThisMonth'],
+      weeklyRevenue: (json['weeklyRevenue'] as List?)
+              ?.map((e) => DailyRevenue.fromJson(e))
+              .toList() ??
+          [],
+      totalWeeklyRevenue: json['totalWeeklyRevenue'] ?? '₹0',
     );
   }
 }

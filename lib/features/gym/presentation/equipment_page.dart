@@ -63,12 +63,14 @@ class EquipmentPage extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back_ios_new_rounded, 
-              color: isDark ? Colors.white : AppColors.textPrimary),
-          ),
-          const SizedBox(width: 8),
+          if (Navigator.canPop(context))
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(Icons.arrow_back_ios_new_rounded, 
+                color: isDark ? Colors.white : AppColors.textPrimary),
+            ),
+          if (Navigator.canPop(context))
+            const SizedBox(width: 8),
           Text(
             'Gym Equipment',
             style: TextStyle(

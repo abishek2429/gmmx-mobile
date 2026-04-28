@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../trainer/presentation/trainer_list_page.dart';
+import '../../gym/providers/membership_plan_provider.dart';
 import '../../../models/user_model.dart';
 
 class ClientCreationPage extends ConsumerStatefulWidget {
@@ -25,7 +26,13 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
+  final feesController = TextEditingController();
+  final feesNotesController = TextEditingController();
+  
   String? selectedTrainerId;
+  String? selectedPlanId;
+  DateTime? startDate = DateTime.now();
+  DateTime? endDate;
   bool isLoading = false;
 
   @override
@@ -33,6 +40,8 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
     nameController.dispose();
     emailController.dispose();
     phoneController.dispose();
+    feesController.dispose();
+    feesNotesController.dispose();
     super.dispose();
   }
 
@@ -41,6 +50,12 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
     if (selectedTrainerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a trainer')),
+      );
+      return;
+    }
+    if (selectedPlanId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a membership plan')),
       );
       return;
     }
@@ -62,6 +77,11 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
             'email': emailController.text,
             'mobile': phoneController.text,
             'assignedTrainerId': selectedTrainerId,
+            'membershipPlanId': selectedPlanId,
+            'joinDate': startDate?.toIso8601String().split('T')[0],
+            'expiryDate': endDate?.toIso8601String().split('T')[0],
+            'feesPaid': double.tryParse(feesController.text),
+            'feesNotes': feesNotesController.text,
           },
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
@@ -264,6 +284,199 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                   loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                   error: (err, _) => Text('Error loading trainers: $err', style: const TextStyle(color: AppColors.error)),
                                 ),
+                              const SizedBox(height: 24),
+                              Text(
+                                'Membership Plan',
+                                style: TextStyle(
+                                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              ref.watch(membershipPlansProvider).when(
+                                data: (plans) => Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: selectedPlanId,
+                                      isExpanded: true,
+                                      hint: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Text(
+                                          'Select plan',
+                                          style: TextStyle(
+                                            color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                          ),
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedPlanId = value;
+                                          if (value != null) {
+                                            final plan = plans.firstWhere((p) => p.id == value);
+                                            endDate = startDate?.add(Duration(days: plan.durationDays));
+                                            feesController.text = plan.price.toStringAsFixed(0);
+                                          }
+                                        });
+                                      },
+                                      items: plans
+                                          .map((plan) => DropdownMenuItem<String>(
+                                                value: plan.id,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                  child: Text(
+                                                    '${plan.name} (₹${plan.price.toStringAsFixed(0)})',
+                                                    style: TextStyle(
+                                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                ),
+                                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                error: (err, _) => Text('Error loading plans: $err', style: const TextStyle(color: AppColors.error)),
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Start Date',
+                                          style: TextStyle(
+                                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        InkWell(
+                                          onTap: () async {
+                                            final picked = await showDatePicker(
+                                              context: context,
+                                              initialDate: startDate ?? DateTime.now(),
+                                              firstDate: DateTime(2000),
+                                              lastDate: DateTime(2100),
+                                            );
+                                            if (picked != null) {
+                                              setState(() {
+                                                startDate = picked;
+                                                if (selectedPlanId != null) {
+                                                  final plans = ref.read(membershipPlansProvider).value;
+                                                  final plan = plans?.firstWhere((p) => p.id == selectedPlanId);
+                                                  if (plan != null) {
+                                                    endDate = startDate?.add(Duration(days: plan.durationDays));
+                                                  }
+                                                }
+                                              });
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.primary),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  startDate == null ? 'Select Date' : '${startDate!.day}/${startDate!.month}/${startDate!.year}',
+                                                  style: TextStyle(
+                                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'End Date',
+                                          style: TextStyle(
+                                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: (isDark ? AppColors.surfaceDark : AppColors.surfaceLight).withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.event_busy_rounded, size: 16, color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                endDate == null ? 'Auto-set' : '${endDate!.day}/${endDate!.month}/${endDate!.year}',
+                                                style: const TextStyle(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              _FormField(
+                                label: 'Fees Paid (₹)',
+                                hintText: '0.00',
+                                icon: Icons.payments_outlined,
+                                controller: feesController,
+                                keyboardType: TextInputType.number,
+                                isDark: isDark,
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) return 'Required';
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              _FormField(
+                                label: 'Fees Notes',
+                                hintText: 'e.g., Paid via GPay',
+                                icon: Icons.note_add_outlined,
+                                controller: feesNotesController,
+                                isDark: isDark,
+                                validator: (value) => null,
+                              ),
                               const SizedBox(height: 40),
                               Container(
                                 padding: const EdgeInsets.all(20),

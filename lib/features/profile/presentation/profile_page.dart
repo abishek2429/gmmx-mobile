@@ -34,15 +34,8 @@ class ProfilePage extends ConsumerWidget {
                 // Header gradient
                 Container(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(isDark ? 0.25 : 0.12),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                  decoration: const BoxDecoration(
+                    color: Colors.transparent,
                   ),
                   child: Column(
                     children: [
@@ -54,33 +47,26 @@ class ProfilePage extends ConsumerWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: isDark ? Colors.white24 : Colors.black12,
                             width: 2,
                           ),
                         ),
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.primary, AppColors.primaryHover],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                            color: isDark ? AppColors.surfaceDark : Colors.white,
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.4),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                            border: Border.all(
+                              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                              width: 1,
+                            ),
                           ),
                           child: Center(
                             child: Text(
                               (user?.fullName.isNotEmpty ?? false)
                                   ? user!.fullName[0].toUpperCase()
                                   : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : AppColors.textPrimary,
                                 fontSize: 36,
                                 fontWeight: FontWeight.w900,
                               ),

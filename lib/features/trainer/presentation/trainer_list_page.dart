@@ -70,7 +70,21 @@ class TrainerListPage extends ConsumerWidget {
           ),
         ),
       ),
-      web: _buildMainContent(context, ref, isDark, trainersAsync, slug, isMobile: false),
+      web: Scaffold(
+        body: Container(
+          decoration: AppTheme.pageBackground(isDark: isDark),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: AppTheme.foregroundGlow(isDark: isDark),
+                ),
+              ),
+              _buildMainContent(context, ref, isDark, trainersAsync, slug, isMobile: false),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -453,6 +467,25 @@ class TrainerCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                ),
+                const SizedBox(width: 8),
+                Consumer(
+                  builder: (context, ref, child) {
+                    return IconButton(
+                      onPressed: () {
+                        final gym = ref.read(gymProvider).value;
+                        final slug = gym?.subdomain ?? 'dashboard';
+                        context.push('/$slug/owner/trainers/edit', extra: trainer);
+                      },
+                      icon: Icon(
+                        Icons.edit_note_rounded,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                        size: 24,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    );
+                  },
                 ),
               ],
             ),

@@ -23,7 +23,11 @@ class Client {
   final String mobile;
   final String assignedTrainer;
   final String? assignedTrainerId;
+  final String membershipPlan;
+  final String? membershipPlanId;
   final DateTime joinedAt;
+  final DateTime? expiryDate;
+  final double feesPaid;
   final int attendanceCount;
   final bool isActive;
 
@@ -34,7 +38,11 @@ class Client {
     required this.mobile,
     required this.assignedTrainer,
     this.assignedTrainerId,
+    required this.membershipPlan,
+    this.membershipPlanId,
     required this.joinedAt,
+    this.expiryDate,
+    this.feesPaid = 0,
     required this.attendanceCount,
     required this.isActive,
   });
@@ -55,7 +63,11 @@ final clientListProvider = FutureProvider<List<Client>>((ref) async {
         mobile: json['mobile'] ?? '',
         assignedTrainer: json['assignedTrainerName'] ?? 'Unassigned',
         assignedTrainerId: json['assignedTrainerId'],
+        membershipPlan: json['membershipPlanName'] ?? 'No Plan',
+        membershipPlanId: json['membershipPlanId'],
         joinedAt: json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : DateTime.now(),
+        expiryDate: json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : null,
+        feesPaid: (json['feesPaid'] as num?)?.toDouble() ?? 0.0,
         attendanceCount: 0,
         isActive: json['status'] == 'ACTIVE',
       );

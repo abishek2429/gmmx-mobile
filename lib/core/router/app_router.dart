@@ -41,7 +41,7 @@ import '../../features/gym/presentation/equipment_page.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _ownerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'ownerHome');
 final _ownerMembersKey = GlobalKey<NavigatorState>(debugLabel: 'ownerMembers');
-final _ownerTrainersKey = GlobalKey<NavigatorState>(debugLabel: 'ownerTrainers');
+final _ownerEquipmentKey = GlobalKey<NavigatorState>(debugLabel: 'ownerEquipment');
 final _ownerPlansKey = GlobalKey<NavigatorState>(debugLabel: 'ownerPlans');
 final _ownerProfileKey = GlobalKey<NavigatorState>(debugLabel: 'ownerProfile');
 
@@ -111,6 +111,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (currentPath == '/login' && !hasGym && !gymState.isLoading) {
           return '/gym-lookup';
         }
+
+        // 3. If unauthenticated and at the gym root (e.g., /nitheesh), go to login
+        final slugParam = state.pathParameters['slug'];
+        if (slugParam != null && (currentPath == '/$slugParam' || currentPath == '/$slugParam/')) {
+          return '/login';
+        }
+      }
+
+      // 3. Authenticated but at gym root
+      final slugParam = state.pathParameters['slug'];
+      if (isLoggedIn && slugParam != null && (currentPath == '/$slugParam' || currentPath == '/$slugParam/')) {
+        return '/$slugParam/${user!.normalizedRole}';
       }
 
       return null;
@@ -154,7 +166,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // ─── ROLE-BASED DASHBOARDS (Multi-tenant) ──────────────────────
       GoRoute(
         path: '/:slug',
-        builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, state) => Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+              strokeWidth: 2,
+            ),
+          ),
+        ),
         routes: [
           // ─── OWNER SHELL ───────────────────────────────────────────────
           StatefulShellRoute.indexedStack(
@@ -183,12 +202,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ],
               ),
               StatefulShellBranch(
-                navigatorKey: _ownerTrainersKey,
+                navigatorKey: _ownerEquipmentKey,
                 routes: [
                   GoRoute(
-                    path: 'owner/trainers',
+                    path: 'owner/equipment',
                     pageBuilder: (context, state) =>
-                        const NoTransitionPage(child: TrainerListPage()),
+                        const NoTransitionPage(child: EquipmentPage()),
                   ),
                 ],
               ),
@@ -350,6 +369,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // ─── Full-screen routes (outside shell — no bottom nav) ────────
       GoRoute(
+        path: '/:slug/owner/trainers',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TrainerListPage(),
+      ),
+      GoRoute(
         path: '/:slug/owner/members/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ClientCreationPage(),
@@ -402,11 +426,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/:slug/owner/membership-plans',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const MembershipPlansPage(),
-      ),
-      GoRoute(
-        path: '/:slug/owner/equipment',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const EquipmentPage(),
       ),
       GoRoute(
         path: '/scanner',
