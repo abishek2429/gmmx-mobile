@@ -525,7 +525,25 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
               ),
             ),
             const SizedBox(width: 12),
-            const Spacer(),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.list_alt_rounded,
+                label: 'Plans',
+                color: Colors.teal,
+                isDark: isDark,
+                onTap: () => context.push('/owner/membership-plans'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.settings_input_component_rounded,
+                label: 'Equipment',
+                color: Colors.blueGrey,
+                isDark: isDark,
+                onTap: () => context.push('/owner/equipment'),
+              ),
+            ),
           ],
         ),
       ],

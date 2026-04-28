@@ -35,6 +35,8 @@ import '../providers/theme_provider.dart';
 import '../../features/admin/presentation/super_admin_dashboard.dart';
 import '../../features/messaging/presentation/internal_messaging_page.dart';
 import '../../features/profile/presentation/settings_sub_pages.dart';
+import '../../features/gym/presentation/membership_plans_page.dart';
+import '../../features/gym/presentation/equipment_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _ownerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'ownerHome');
@@ -395,6 +397,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/:slug/owner/settings/help',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const HelpSupportPage(),
+      ),
+      GoRoute(
+        path: '/:slug/owner/membership-plans',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MembershipPlansPage(),
+      ),
+      GoRoute(
+        path: '/:slug/owner/equipment',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const EquipmentPage(),
       ),
       GoRoute(
         path: '/scanner',

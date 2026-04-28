@@ -12,6 +12,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../auth/providers/gym_provider.dart';
+import '../../attendance/providers/attendance_provider.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 
 // Client model
@@ -476,6 +477,33 @@ class ClientCard extends ConsumerWidget {
                         ],
                       ),
                     ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () async {
+                    try {
+                      await ref.read(attendanceActionProvider).markAttendance(client.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Attendance marked for ${client.name}')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to mark attendance: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.how_to_reg_rounded, color: AppColors.primary, size: 20),
                   ),
                 ),
                 GestureDetector(

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'dart:async';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../providers/chat_provider.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 class InternalMessagingPage extends ConsumerStatefulWidget {
   final String recipientId;
@@ -21,46 +25,69 @@ class InternalMessagingPage extends ConsumerStatefulWidget {
 
 class _InternalMessagingPageState extends ConsumerState<InternalMessagingPage> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [];
+  final ScrollController _scrollController = ScrollController();
+  Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
-    // Mock initial messages for a professional look
-    _messages.addAll([
-      {
-        'text': 'Hi ${widget.recipientName}, how is your workout going today? 💪',
-        'isMe': true,
-        'time': '10:00 AM'
-      },
-      {
-        'text': 'It is going great! Just finished the cardio session.',
-        'isMe': false,
-        'time': '10:05 AM'
-      },
-      {
-        'text': 'Excellent. Keep it up! Next is strength training.',
-        'isMe': true,
-        'time': '10:06 AM'
-      },
-    ]);
+    // Start polling for new messages
+    _startPolling();
   }
 
-  void _sendMessage() {
-    if (_controller.text.trim().isEmpty) return;
-    setState(() {
-      _messages.add({
-        'text': _controller.text,
-        'isMe': true,
-        'time': 'Just now',
-      });
-      _controller.clear();
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      ref.read(chatProvider(widget.recipientId).notifier).fetchMessages();
     });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    
+    try {
+      await ref.read(chatProvider(widget.recipientId).notifier).sendMessage(text);
+      _controller.clear();
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send message: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final chatAsync = ref.watch(chatProvider(widget.recipientId));
+    final currentUser = ref.watch(authControllerProvider).user;
+
+    // Scroll to bottom when messages change
+    ref.listen(chatProvider(widget.recipientId), (prev, next) {
+      if (next.hasValue) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    });
 
     return Scaffold(
       body: Container(
@@ -77,13 +104,20 @@ class _InternalMessagingPageState extends ConsumerState<InternalMessagingPage> {
                 children: [
                   _buildHeader(context, isDark),
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final msg = _messages[index];
-                        return _buildMessageBubble(msg['text'], msg['isMe'], msg['time'], isDark);
-                      },
+                    child: chatAsync.when(
+                      data: (messages) => ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(20),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = messages[index];
+                          final isMe = msg.senderId == currentUser?.id;
+                          final timeStr = DateFormat('hh:mm a').format(msg.createdAt);
+                          return _buildMessageBubble(msg.message, isMe, timeStr, isDark);
+                        },
+                      ),
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (err, _) => Center(child: Text('Error: $err')),
                     ),
                   ),
                   _buildInputArea(isDark),
