@@ -335,25 +335,33 @@ class _StatBadge extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: isDark ? Colors.white38 : Colors.grey[600]),
           const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value, 
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  label, 
-                  style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.grey[500], fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
+          if (isLong)
+            Expanded(
+              child: _buildContent(),
+            )
+          else
+            _buildContent(),
         ],
       ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value, 
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          label, 
+          style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.grey[500], fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }
