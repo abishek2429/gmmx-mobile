@@ -48,10 +48,14 @@ jobs:
           path: build/web
 
       # 🚀 Create GitHub Release and upload the APK directly (Only on Tags)
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/gmmx-${{ github.ref_name }}.apk
+        if: startsWith(github.ref, 'refs/tags/')
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/gmmx-${{ github.ref_name }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
