@@ -9,6 +9,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../dashboard/presentation/dashboard_controller.dart';
 
 class TrainerCreationPage extends ConsumerStatefulWidget {
   const TrainerCreationPage({super.key});
@@ -76,8 +77,10 @@ class _TrainerCreationPageState extends ConsumerState<TrainerCreationPage> {
         );
 
         if (mounted) {
-          // ignore: unused_result
-          ref.refresh(trainerListProvider);
+          // Invalidate both the list and the dashboard to show new activity
+          ref.invalidate(trainerListProvider);
+          ref.invalidate(recentActivityProvider);
+          ref.invalidate(ownerStatsProvider);
           Navigator.of(context).pop();
         }
       } catch (e) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../auth/providers/gym_provider.dart';
 
 class NotificationSettingsPage extends ConsumerWidget {
   const NotificationSettingsPage({super.key});
@@ -60,10 +61,51 @@ class PrivacySecurityPage extends ConsumerWidget {
       title: 'Privacy & Security',
       isDark: isDark,
       children: [
-        _buildActionTile('Change PIN', Icons.lock_outline_rounded, isDark),
-        _buildActionTile('Two-Factor Authentication', Icons.security_rounded, isDark),
-        _buildActionTile('Data Privacy Policy', Icons.privacy_tip_outlined, isDark),
         _buildActionTile('Logged-in Devices', Icons.devices_rounded, isDark),
+        _buildActionTile('Gym Management Settings', Icons.settings_applications_rounded, isDark, onTap: () {
+          final gym = ref.read(gymProvider).value;
+          final slug = gym?.subdomain ?? 'dashboard';
+          context.push('/$slug/owner/settings/gym-management');
+        }),
+      ],
+    );
+  }
+
+  Widget _buildActionTile(String title, IconData icon, bool isDark, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: AppTheme.cardDecoration(isDark: isDark, radius: 20),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primary),
+            const SizedBox(width: 16),
+            Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppColors.textPrimary)),
+            const Spacer(),
+            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HelpSupportPage extends ConsumerWidget {
+  const HelpSupportPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    return _SettingsShell(
+      title: 'Help & Support',
+      isDark: isDark,
+      children: [
+        _buildActionTile('Contact Support', Icons.support_agent_rounded, isDark),
+        _buildActionTile('FAQ', Icons.question_answer_outlined, isDark),
+        _buildActionTile('Report a Bug', Icons.bug_report_outlined, isDark),
+        _buildActionTile('About GMMX', Icons.info_outline_rounded, isDark),
       ],
     );
   }
@@ -86,20 +128,21 @@ class PrivacySecurityPage extends ConsumerWidget {
   }
 }
 
-class HelpSupportPage extends ConsumerWidget {
-  const HelpSupportPage({super.key});
+class GymManagementSettingsPage extends ConsumerWidget {
+  const GymManagementSettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     return _SettingsShell(
-      title: 'Help & Support',
+      title: 'Gym Management',
       isDark: isDark,
       children: [
-        _buildActionTile('Contact Support', Icons.support_agent_rounded, isDark),
-        _buildActionTile('FAQ', Icons.question_answer_outlined, isDark),
-        _buildActionTile('Report a Bug', Icons.bug_report_outlined, isDark),
-        _buildActionTile('About GMMX', Icons.info_outline_rounded, isDark),
+        _buildActionTile('Biometric Sync (ESSL/Matrix)', Icons.fingerprint_rounded, isDark),
+        _buildActionTile('Operator Access Control', Icons.admin_panel_settings_rounded, isDark),
+        _buildActionTile('Old Data Upload (CSV)', Icons.upload_file_rounded, isDark),
+        _buildActionTile('Whatsapp Integration API', Icons.chat_rounded, isDark),
+        _buildActionTile('Custom Invoice Settings', Icons.receipt_long_rounded, isDark),
       ],
     );
   }

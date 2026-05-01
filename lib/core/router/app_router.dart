@@ -37,6 +37,11 @@ import '../../features/messaging/presentation/internal_messaging_page.dart';
 import '../../features/profile/presentation/settings_sub_pages.dart';
 import '../../features/gym/presentation/membership_plans_page.dart';
 import '../../features/gym/presentation/equipment_page.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/leads/presentation/screens/lead_list_screen.dart';
+import '../../features/leads/presentation/screens/lead_creation_screen.dart';
+import '../../features/gym/presentation/expense_list_page.dart';
+import '../../features/dashboard/presentation/screens/reports_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _ownerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'ownerHome');
@@ -44,6 +49,7 @@ final _ownerMembersKey = GlobalKey<NavigatorState>(debugLabel: 'ownerMembers');
 final _ownerEquipmentKey = GlobalKey<NavigatorState>(debugLabel: 'ownerEquipment');
 final _ownerPlansKey = GlobalKey<NavigatorState>(debugLabel: 'ownerPlans');
 final _ownerProfileKey = GlobalKey<NavigatorState>(debugLabel: 'ownerProfile');
+final _ownerLeadsKey = GlobalKey<NavigatorState>(debugLabel: 'ownerLeads');
 
 final _trainerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'trainerHome');
 final _trainerClientsKey = GlobalKey<NavigatorState>(debugLabel: 'trainerClients');
@@ -58,9 +64,7 @@ final _clientProgressKey = GlobalKey<NavigatorState>(debugLabel: 'clientProgress
 final _clientProfileKey = GlobalKey<NavigatorState>(debugLabel: 'clientProfile');
 
 final userProvider = Provider<UserModel?>((ref) {
-  final authUser = ref.watch(authControllerProvider.select((s) => s.user));
-  if (authUser != null) return authUser;
-  return ref.read(sessionServiceProvider).getLoggedInUser();
+  return ref.watch(authControllerProvider.select((s) => s.user));
 });
 
 class RouterNotifier extends ChangeNotifier {
@@ -78,7 +82,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: '/splash',
     refreshListenable: notifier,
     redirect: (context, state) {
       final user = ref.read(userProvider);
@@ -87,11 +91,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final currentPath = state.uri.path;
       final hasGym = gymState.hasValue && gymState.value != null;
 
+      // Allow splash to show
+      if (currentPath == '/splash') return null;
+
       // 1. Logged in users: Always force them to their role-based dashboard if on public pages
       if (isLoggedIn && user != null) {
         final slug = gymState.value?.subdomain ?? 'dashboard';
         final homePath = '/$slug/${user.normalizedRole}';
-        if (currentPath == '/' || currentPath == '/login' || currentPath == '/gym-lookup') {
+        if (currentPath == '/' || currentPath == '/welcome' || currentPath == '/login' || currentPath == '/gym-lookup') {
           return homePath;
         }
       }
@@ -103,11 +110,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             currentPath.contains('/trainer') ||
             currentPath.contains('/client') ||
             currentPath.contains('/admin')) {
-          return '/';
+          return '/welcome';
         }
 
         // If they are on welcome/login but don't have a gym yet, send to lookup
-        // But don't redirect if we are currently loading the gym
         if (currentPath == '/login' && !hasGym && !gymState.isLoading) {
           return '/gym-lookup';
         }
@@ -129,12 +135,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(
-        path: '/gym-lookup',
-        name: 'gym-lookup',
-        builder: (context, state) => const GymLookupScreen(),
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
-        path: '/',
+        path: '/welcome',
         name: 'welcome',
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
@@ -143,6 +149,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             return FadeTransition(opacity: animation, child: child);
           },
         ),
+      ),
+      GoRoute(
+        path: '/',
+        redirect: (context, state) => '/welcome',
+      ),
+      GoRoute(
+        path: '/gym-lookup',
+        name: 'gym-lookup',
+        builder: (context, state) => const GymLookupScreen(),
       ),
       GoRoute(
         path: '/login',
@@ -192,6 +207,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ],
               ),
               StatefulShellBranch(
+                navigatorKey: _ownerLeadsKey,
+                routes: [
+                  GoRoute(
+                    path: 'owner/leads',
+                    pageBuilder: (context, state) =>
+                        const NoTransitionPage(child: LeadListScreen()),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
                 navigatorKey: _ownerMembersKey,
                 routes: [
                   GoRoute(
@@ -215,9 +240,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 navigatorKey: _ownerPlansKey,
                 routes: [
                   GoRoute(
-                    path: 'owner/plans',
+                    path: 'owner/finance',
                     pageBuilder: (context, state) =>
                         const NoTransitionPage(child: PaymentsPage()),
+                    routes: [
+                      GoRoute(
+                        path: 'expenses',
+                        builder: (context, state) => const ExpenseListPage(),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -392,6 +423,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TrainerCreationPage(),
       ),
       GoRoute(
+        path: '/:slug/owner/leads/add',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LeadCreationScreen(),
+      ),
+      GoRoute(
         path: '/:slug/owner/trainers/edit',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -423,6 +459,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HelpSupportPage(),
       ),
       GoRoute(
+        path: '/:slug/owner/settings/gym-management',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const GymManagementSettingsPage(),
+      ),
+      GoRoute(
         path: '/:slug/owner/membership-plans',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const MembershipPlansPage(),
@@ -431,6 +472,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/scanner',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const QrScannerPage(),
+      ),
+      GoRoute(
+        path: '/:slug/owner/reports',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ReportsScreen(),
       ),
     ],
   );

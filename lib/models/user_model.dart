@@ -7,6 +7,7 @@ class UserModel {
   final String role;
   final String tenantId;
   final String status;
+  final String permissions;
 
   const UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     required this.role,
     required this.tenantId,
     this.status = 'active',
+    this.permissions = '',
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class UserModel {
       role: json['role'] as String? ?? '',
       tenantId: json['tenantId'] as String? ?? '',
       status: json['status'] as String? ?? 'active',
+      permissions: json['permissions'] as String? ?? '',
     );
   }
 
@@ -42,6 +45,7 @@ class UserModel {
       'role': role,
       'tenantId': tenantId,
       'status': status,
+      'permissions': permissions,
     };
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 import 'client_list_page.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -11,6 +12,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../trainer/presentation/trainer_list_page.dart';
 import '../../gym/providers/membership_plan_provider.dart';
+import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../../models/user_model.dart';
 
 class ClientCreationPage extends ConsumerStatefulWidget {
@@ -34,6 +36,8 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
   DateTime? startDate = DateTime.now();
   DateTime? endDate;
   bool isLoading = false;
+  String _countryCode = '+91';
+  String _fullPhoneNumber = '';
 
   @override
   void dispose() {
@@ -47,19 +51,7 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
 
   void handleCreateClient() {
     if (!formKey.currentState!.validate()) return;
-    if (selectedTrainerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a trainer')),
-      );
-      return;
-    }
-    if (selectedPlanId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a membership plan')),
-      );
-      return;
-    }
-
+    
     setState(() => isLoading = true);
 
     Future.microtask(() async {
@@ -75,7 +67,8 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
           data: {
             'fullName': nameController.text,
             'email': emailController.text,
-            'mobile': phoneController.text,
+            'mobile': _fullPhoneNumber.isNotEmpty ? _fullPhoneNumber : phoneController.text,
+            'countryCode': _countryCode,
             'assignedTrainerId': selectedTrainerId,
             'membershipPlanId': selectedPlanId,
             'joinDate': startDate?.toIso8601String().split('T')[0],
@@ -87,8 +80,10 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
         );
 
         if (mounted) {
-          // ignore: unused_result
-          ref.refresh(clientListProvider);
+          // Invalidate both the list and the dashboard to show new activity
+          ref.invalidate(clientListProvider);
+          ref.invalidate(recentActivityProvider);
+          ref.invalidate(ownerStatsProvider);
           Navigator.of(context).pop();
         }
       } catch (e) {
@@ -211,20 +206,74 @@ class _ClientCreationPageState extends ConsumerState<ClientCreationPage> {
                                 },
                               ),
                               const SizedBox(height: 20),
-                              _FormField(
-                                label: 'Phone Number',
-                                hintText: 'e.g., 9876543210',
-                                icon: Icons.phone_android_rounded,
-                                controller: phoneController,
-                                keyboardType: TextInputType.phone,
-                                isDark: isDark,
-                                validator: (value) {
-                                  if (value?.isEmpty ?? true) return 'Phone is required';
-                                  if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value ?? '')) {
-                                    return 'Invalid 10-digit phone number';
-                                  }
-                                  return null;
-                                },
+                              // Phone field with country code picker
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Phone Number',
+                                    style: TextStyle(
+                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Theme(
+                                    data: Theme.of(context).copyWith(
+                                      inputDecorationTheme: InputDecorationTheme(
+                                        filled: true,
+                                        fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                      ),
+                                    ),
+                                    child: IntlPhoneField(
+                                      controller: phoneController,
+                                      initialCountryCode: 'IN',
+                                      style: TextStyle(
+                                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                        fontSize: 15,
+                                      ),
+                                      dropdownTextStyle: TextStyle(
+                                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: '99447XXXXX',
+                                        hintStyle: TextStyle(
+                                          color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                        ),
+                                        counterText: '',
+                                      ),
+                                      onChanged: (phone) {
+                                        setState(() {
+                                          _countryCode = '+${phone.countryCode}';
+                                          _fullPhoneNumber = phone.completeNumber;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.number.isEmpty) return 'Phone is required';
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 24),
                               Text(

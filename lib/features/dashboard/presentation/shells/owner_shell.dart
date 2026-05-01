@@ -34,6 +34,10 @@ class OwnerShell extends StatelessWidget {
               label: Text('Home'),
             ),
             FBottomNavigationBarItem(
+              icon: Icon(Icons.person_search_rounded),
+              label: Text('Leads'),
+            ),
+            FBottomNavigationBarItem(
               icon: Icon(Icons.people_alt_rounded),
               label: Text('Members'),
             ),

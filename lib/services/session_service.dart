@@ -1,6 +1,13 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
+import '../core/providers/theme_provider.dart';
+
+final sessionServiceProvider = Provider<SessionService>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return SessionService(prefs);
+});
 
 /// Manages login session persistence (Remember Me)
 class SessionService {
@@ -37,5 +44,15 @@ class SessionService {
   Future<void> clearSession() async {
     await _prefs.remove(_keyUser);
     await _prefs.setBool(_keyLoggedIn, false);
+  }
+
+  /// Get the stored gym slug for quick login
+  String? getStoredGymSlug() {
+    return _prefs.getString('gmmx_last_gym_slug');
+  }
+
+  /// Save the gym slug for future sessions
+  Future<void> saveGymSlug(String slug) async {
+    await _prefs.setString('gmmx_last_gym_slug', slug);
   }
 }

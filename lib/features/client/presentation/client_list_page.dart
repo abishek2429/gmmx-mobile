@@ -492,33 +492,6 @@ class ClientCard extends ConsumerWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () async {
-                    try {
-                      await ref.read(attendanceActionProvider).markAttendance(client.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Attendance marked for ${client.name}')),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to mark attendance: $e'), backgroundColor: Colors.red),
-                        );
-                      }
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.how_to_reg_rounded, color: AppColors.primary, size: 20),
-                  ),
-                ),
-                GestureDetector(
                   onTap: () {
                     final gym = ref.read(gymProvider).value;
                     final slug = gym?.subdomain ?? 'dashboard';
@@ -526,7 +499,7 @@ class ClientCard extends ConsumerWidget {
                   },
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.only(right: 12),
+                    margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: AppColors.success.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -535,26 +508,32 @@ class ClientCard extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: client.isActive
-                        ? AppColors.success.withOpacity(0.12)
-                        : AppColors.error.withOpacity(0.12),
+                    color: client.isActive ? AppColors.success.withOpacity(0.12) : AppColors.error.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     client.isActive ? 'Active' : 'Inactive',
                     style: TextStyle(
-                      color: client.isActive
-                          ? (isDark ? AppColors.successDark : AppColors.success)
-                          : (isDark ? AppColors.errorDark : AppColors.error),
+                      color: client.isActive ? (isDark ? AppColors.successDark : AppColors.success) : (isDark ? AppColors.errorDark : AppColors.error),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.black54),
+                  onSelected: (val) => _handleAction(context, ref, val, client),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit Member')),
+                    PopupMenuItem(
+                      value: client.isActive ? 'freeze' : 'unfreeze',
+                      child: Text(client.isActive ? 'Freeze Membership' : 'Unfreeze Membership'),
+                    ),
+                    const PopupMenuItem(value: 'upgrade', child: Text('Upgrade Plan')),
+                    const PopupMenuItem(value: 'delete', child: Text('Delete Member', style: TextStyle(color: Colors.red))),
+                  ],
                 ),
               ],
             ),
@@ -584,6 +563,86 @@ class ClientCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleAction(BuildContext context, WidgetRef ref, String action, Client client) async {
+    final dio = ref.read(dioClientProvider);
+    final authService = ref.read(authServiceProvider);
+    final token = await authService.getToken();
+    final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+
+    switch (action) {
+      case 'delete':
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Member'),
+            content: Text('Are you sure you want to delete ${client.name}? This action cannot be undone.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed == true) {
+          try {
+            await dio.delete(
+              '/api/members/${client.id}',
+              options: Options(headers: {'Authorization': 'Bearer $token'}),
+            );
+            ref.invalidate(clientListProvider);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Member deleted successfully')),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to delete: $e'), backgroundColor: AppColors.error),
+              );
+            }
+          }
+        }
+        break;
+
+      case 'freeze':
+      case 'unfreeze':
+        try {
+          final newStatus = client.isActive ? 'INACTIVE' : 'ACTIVE';
+          await dio.put(
+            '/api/members/${client.id}',
+            data: {'status': newStatus},
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          );
+          ref.invalidate(clientListProvider);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Member status updated to ${newStatus.toLowerCase()}')),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to update status: $e'), backgroundColor: AppColors.error),
+            );
+          }
+        }
+        break;
+
+      case 'edit':
+        context.push('/$slug/owner/members/edit', extra: client);
+        break;
+
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${action.toUpperCase()} action for ${client.name} coming soon!')),
+        );
+    }
   }
 }
 

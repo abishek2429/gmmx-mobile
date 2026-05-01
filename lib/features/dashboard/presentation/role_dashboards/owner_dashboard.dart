@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
 import '../dashboard_controller.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -13,6 +18,7 @@ import '../../../../models/plan_model.dart';
 import '../../../../services/session_service.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../auth/providers/gym_provider.dart';
+import '../../../../core/network/dio_client.dart';
 
 class OwnerDashboard extends ConsumerStatefulWidget {
   const OwnerDashboard({super.key});
@@ -300,7 +306,8 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
           final gym = ref.read(gymProvider).value;
           final slug = gym?.subdomain ?? 'dashboard';
           if (!data.isAccessible) {
-            context.push('/$slug/owner/plans');
+            // Plan upgrades must be done on the web
+            _launchWebUpgrade();
           } else if (data.label == 'Active Trainers') {
             context.push('/$slug/owner/trainers');
           } else if (data.label == 'Total Members') {
@@ -492,6 +499,20 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
             ),
             const SizedBox(width: 12),
             Expanded(
+              child: _buildActionCard(
+                icon: Icons.person_search_rounded,
+                label: 'Leads',
+                color: Colors.orange,
+                isDark: isDark,
+                onTap: () {
+                  final gym = ref.read(gymProvider).value;
+                  final slug = gym?.subdomain ?? 'dashboard';
+                  context.push('/$slug/owner/leads');
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
               child: canAddTrainers
                   ? _buildActionCard(
                       icon: Icons.fitness_center_rounded,
@@ -628,7 +649,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
     required bool isDark,
   }) {
     return GestureDetector(
-      onTap: () => context.push('/owner/plans'),
+      onTap: () => launchUrl(Uri.parse('https://gmmx.app/signup')),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: AppTheme.cardDecoration(isDark: isDark, radius: 24).copyWith(
@@ -684,11 +705,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
   }
 
   Widget _buildRecentActivity(bool isDark) {
-    final activities = [
-      _Activity('New Member Joined', 'Rahul Sharma • Platinum Plan', Icons.person_add_rounded, '2m ago'),
-      _Activity('Payment Received', '₹5,000 from Priya Singh', Icons.payments_rounded, '15m ago'),
-      _Activity('Trainer Added', 'Mike Coach joined the team', Icons.fitness_center_rounded, '1h ago'),
-    ];
+    final activitiesAsync = ref.watch(recentActivityProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -704,24 +721,53 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               ),
             ),
-            Text(
-              'VIEW ALL',
-              style: TextStyle(
-                fontSize: 11, 
-                fontWeight: FontWeight.w900, 
-                color: AppColors.primary,
-                letterSpacing: 1,
+            GestureDetector(
+              onTap: () => ref.refresh(recentActivityProvider),
+              child: Text(
+                'REFRESH',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primary,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 20),
-        ...activities.map((a) => _buildActivityTile(a, isDark)),
+        activitiesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+          error: (e, _) => Text('Could not load activity', style: TextStyle(color: AppColors.error)),
+          data: (activities) => Column(
+            children: activities.map((a) => _buildRealActivityTile(a, isDark)).toList(),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildActivityTile(_Activity activity, bool isDark) {
+  Widget _buildRealActivityTile(RecentActivity activity, bool isDark) {
+    IconData icon;
+    Color iconColor;
+    switch (activity.icon) {
+      case 'person_add':
+        icon = Icons.person_add_rounded;
+        iconColor = AppColors.primary;
+        break;
+      case 'fitness_center':
+        icon = Icons.fitness_center_rounded;
+        iconColor = AppColors.info;
+        break;
+      case 'payments':
+        icon = Icons.payments_rounded;
+        iconColor = AppColors.success;
+        break;
+      default:
+        icon = Icons.info_outline_rounded;
+        iconColor = AppColors.primary;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -731,10 +777,10 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(activity.icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -789,9 +835,9 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
           children: [
             const Text('DOWNLOAD REPORTS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1)),
             const SizedBox(height: 24),
-            _reportOption('Monthly Revenue Report', Icons.picture_as_pdf_rounded, Colors.red),
-            _reportOption('Member Attendance Log', Icons.table_chart_rounded, Colors.green),
-            _reportOption('Trainer Performance', Icons.analytics_rounded, Colors.blue),
+            _reportOption('Members Report (CSV)', Icons.people_rounded, Colors.blue, 'members'),
+            _reportOption('Payments Report (CSV)', Icons.payments_rounded, Colors.green, 'payments'),
+            _reportOption('Attendance Report (CSV)', Icons.table_chart_rounded, Colors.orange, 'attendance'),
             const SizedBox(height: 32),
           ],
         ),
@@ -799,16 +845,51 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
     );
   }
 
-  Widget _reportOption(String title, IconData icon, Color color) {
+  Widget _reportOption(String title, IconData icon, Color color, String type) {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       trailing: const Icon(Icons.download_rounded, size: 20),
-      onTap: () {
+      onTap: () async {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generating report...')));
+        await _downloadReport(type);
       },
     );
+  }
+
+  Future<void> _downloadReport(String type) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Generating report...'), duration: Duration(seconds: 2)),
+      );
+
+      final dio = ref.read(dioClientProvider);
+      final authService = ref.read(authServiceProvider);
+      final token = await authService.getToken();
+
+      final response = await dio.get(
+        '/api/reports/$type',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          responseType: ResponseType.bytes,
+        ),
+      );
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/gmmx_${type}_report.csv');
+      await file.writeAsBytes(response.data);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'GMMX ${type.toUpperCase()} Report',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
   }
 
   void _showBroadcastDialog(BuildContext context) {
@@ -871,6 +952,19 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
     if (hour < 12) return 'Morning';
     if (hour < 17) return 'Afternoon';
     return 'Evening';
+  }
+
+  Future<void> _launchWebUpgrade() async {
+    final uri = Uri.parse('https://gmmx.app/signup');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please visit gmmx.app/signup to upgrade your plan')),
+        );
+      }
+    }
   }
 }
 

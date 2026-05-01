@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../trainer/presentation/trainer_list_page.dart';
+import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../../models/user_model.dart';
 
 class ClientEditPage extends ConsumerStatefulWidget {
@@ -34,7 +35,7 @@ class _ClientEditPageState extends ConsumerState<ClientEditPage> {
     nameController = TextEditingController(text: widget.client.name);
     emailController = TextEditingController(text: widget.client.email);
     phoneController = TextEditingController(text: widget.client.mobile);
-    selectedTrainerId = widget.client.assignedTrainer != 'Unassigned' ? widget.client.assignedTrainer : null;
+    selectedTrainerId = widget.client.assignedTrainerId;
   }
 
   @override
@@ -70,8 +71,10 @@ class _ClientEditPageState extends ConsumerState<ClientEditPage> {
         );
 
         if (mounted) {
-          // ignore: unused_result
-          ref.refresh(clientListProvider);
+          // Invalidate both the list and the dashboard
+          ref.invalidate(clientListProvider);
+          ref.invalidate(recentActivityProvider);
+          ref.invalidate(ownerStatsProvider);
           Navigator.of(context).pop();
         }
       } catch (e) {

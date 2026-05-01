@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
 import '../providers/plan_provider.dart';
 import '../../models/plan_model.dart';
@@ -91,7 +92,19 @@ class _LockedFeatureCard extends ConsumerWidget {
             ),
           ),
           GestureDetector(
-            onTap: () => context.push('/owner/plans'),
+            onTap: () async {
+              // Plan upgrades must be done on the web
+              final uri = Uri.parse('https://gmmx.app/signup');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Open gmmx.app/signup to upgrade your plan')),
+                  );
+                }
+              }
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
@@ -216,7 +229,13 @@ class PlanUsageBanner extends ConsumerWidget {
               ),
               if (!isUnlimited)
                 GestureDetector(
-                  onTap: () => context.push('/owner/plans'),
+                  onTap: () async {
+                    // Plan upgrades must be done on the web
+                    final uri = Uri.parse('https://gmmx.app/signup');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
                   child: Row(
                     children: [
                       Text(

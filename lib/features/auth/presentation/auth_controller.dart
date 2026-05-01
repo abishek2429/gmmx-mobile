@@ -12,11 +12,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(dio);
 });
 
-/// Provides the session service
-final sessionServiceProvider = Provider<SessionService>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return SessionService(prefs);
-});
+
 
 /// Auth state
 class AuthState {
@@ -77,7 +73,16 @@ class AuthController extends StateNotifier<AuthState> {
   final SessionService _sessionService;
 
   AuthController(this._authService, this._sessionService)
-      : super(const AuthState());
+      : super(const AuthState()) {
+    _loadSession();
+  }
+
+  void _loadSession() {
+    final user = _sessionService.getLoggedInUser();
+    if (user != null) {
+      state = state.copyWith(user: user);
+    }
+  }
 
   /// Login with PIN
   Future<UserModel?> login({
@@ -182,12 +187,14 @@ class AuthController extends StateNotifier<AuthState> {
 
   /// Logout
   Future<void> logout() async {
+    state = state.copyWith(isLoading: true);
     try {
       await _authService.logout();
     } catch (_) {
       // Ignore network errors on logout
     } finally {
       await _sessionService.clearSession();
+      // Reset state to initial with null user
       state = const AuthState();
     }
   }
