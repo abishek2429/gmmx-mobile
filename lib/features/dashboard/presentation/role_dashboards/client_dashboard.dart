@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../services/session_service.dart';
 import '../../../auth/presentation/auth_controller.dart';
+import '../../../auth/providers/gym_provider.dart';
 import '../dashboard_controller.dart';
 
 class ClientDashboard extends ConsumerWidget {
@@ -60,7 +61,7 @@ class ClientDashboard extends ConsumerWidget {
                               const SizedBox(height: 32),
                               _buildTodayWorkout(isDark, stats),
                               const SizedBox(height: 32),
-                              _buildTrainerInfo(isDark, stats),
+                              _buildTrainerInfo(context, ref, isDark, stats),
                               const SizedBox(height: 32),
                               _buildAttendanceHistory(isDark, stats),
                               const SizedBox(height: 32),
@@ -534,7 +535,19 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildExerciseTile(_Exercise exercise, bool isDark) {
+  Widget _buildExerciseTile(Exercise exercise, bool isDark) {
+    IconData iconData;
+    switch (exercise.icon) {
+      case 'fitness_center':
+        iconData = Icons.fitness_center_rounded;
+        break;
+      case 'directions_run':
+        iconData = Icons.directions_run_rounded;
+        break;
+      default:
+        iconData = Icons.fitness_center_rounded;
+    }
+
     return Container(
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -545,7 +558,7 @@ class ClientDashboard extends ConsumerWidget {
               color: isDark ? AppColors.secondaryBgDark : AppColors.surfaceElevatedLight,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(exercise.icon, color: AppColors.primary, size: 20),
+            child: Icon(iconData, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -578,7 +591,7 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildTrainerInfo(bool isDark, ClientStats stats) {
+  Widget _buildTrainerInfo(BuildContext context, WidgetRef ref, bool isDark, ClientStats stats) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -690,7 +703,7 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildAttendanceDay(_AttendanceDay day, bool isDark) {
+  Widget _buildAttendanceDay(AttendanceDay day, bool isDark) {
     return Column(
       children: [
         Container(
@@ -774,14 +787,4 @@ class ClientDashboard extends ConsumerWidget {
   }
 }
 
-class _Exercise {
-  final String name, sets;
-  final IconData icon;
-  _Exercise(this.name, this.sets, this.icon);
-}
-
-class _AttendanceDay {
-  final String day;
-  final bool present;
-  _AttendanceDay(this.day, this.present);
 }
