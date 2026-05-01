@@ -53,10 +53,26 @@ class ChatNotifier extends StateNotifier<AsyncValue<List<ChatMessage>>> {
   Future<void> fetchMessages() async {
     try {
       final response = await _dio.get('/api/chat/conversation/$_otherUserId');
-      final List<dynamic> data = response.data['data']['content'];
-      final messages = data.map((json) => ChatMessage.fromJson(json)).toList();
+      
+      // Handle the Page object from Spring
+      final dynamic rawData = response.data['data'];
+      List<dynamic> content;
+      
+      if (rawData is List) {
+        content = rawData;
+      } else if (rawData is Map && rawData.containsKey('content')) {
+        content = rawData['content'];
+      } else {
+        throw Exception('Unexpected data format: $rawData');
+      }
+
+      final messages = content.map((json) => ChatMessage.fromJson(json)).toList();
       state = AsyncValue.data(messages.reversed.toList()); // Oldest first for list view
     } catch (e, stack) {
+      print('CHAT_ERROR: $e');
+      if (e is DioException) {
+        print('CHAT_RESPONSE: ${e.response?.data}');
+      }
       state = AsyncValue.error(e, stack);
     }
   }
