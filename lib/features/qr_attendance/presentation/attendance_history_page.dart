@@ -38,6 +38,14 @@ class AttendanceHistoryPage extends ConsumerWidget {
                   pinned: true,
                   backgroundColor: Colors.transparent,
                   elevation: 0,
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
                       'ATTENDANCE LOG',
