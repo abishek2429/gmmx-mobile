@@ -18,10 +18,21 @@ import '../../auth/providers/gym_provider.dart';
 
 final trainerListProvider = FutureProvider<List<UserModel>>((ref) async {
   final dio = ref.read(dioClientProvider);
-  final response = await dio.get('/api/trainers');
-  
-  final List<dynamic> content = response.data['data']['content'] ?? [];
-  return content.map((json) => UserModel.fromJson(json)).toList();
+  try {
+    final response = await dio.get('/api/trainers', queryParameters: {
+      'page': 0,
+      'size': 50,
+    });
+    
+    if (response.data['success'] == true) {
+      final List<dynamic> content = response.data['data']['content'] ?? [];
+      return content.map((json) => UserModel.fromJson(json)).toList();
+    } else {
+      throw Exception(response.data['message'] ?? 'Failed to load trainers');
+    }
+  } on DioException catch (e) {
+    throw Exception(e.response?.data['message'] ?? e.message);
+  }
 });
 
 class TrainerListPage extends ConsumerWidget {
