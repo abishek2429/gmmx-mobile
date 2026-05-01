@@ -245,7 +245,7 @@ class _PlanCard extends StatelessWidget {
                         const SnackBar(content: Text('Plan selection logic here')),
                       );
                     },
-                    variant: isRecommended ? FButtonVariant.primary : FButtonVariant.outline,
+                    variant: isRecommended ? null : FButtonVariant.outline,
                     child: Text('Select ${plan.displayName}'),
                   ),
                 ),
