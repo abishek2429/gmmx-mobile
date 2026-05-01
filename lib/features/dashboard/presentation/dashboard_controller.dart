@@ -49,6 +49,86 @@ class OwnerStats {
   }
 }
 
+class ClientStats {
+  final String planName;
+  final String expiryDate;
+  final int totalVisits;
+  final int calories;
+  final List<Exercise> todayWorkout;
+  final String? trainerId;
+  final String trainerName;
+  final String trainerSpecialty;
+  final List<AttendanceDay> attendanceStreak;
+  final int steps;
+  final int stepGoal;
+
+  ClientStats({
+    required this.planName,
+    required this.expiryDate,
+    required this.totalVisits,
+    required this.calories,
+    required this.todayWorkout,
+    this.trainerId,
+    required this.trainerName,
+    required this.trainerSpecialty,
+    required this.attendanceStreak,
+    required this.steps,
+    required this.stepGoal,
+  });
+
+  factory ClientStats.fromJson(Map<String, dynamic> json) {
+    return ClientStats(
+      planName: json['planName'] ?? 'Standard',
+      expiryDate: json['expiryDate'] ?? 'N/A',
+      totalVisits: json['totalVisits'] ?? 0,
+      calories: json['calories'] ?? 0,
+      todayWorkout: (json['todayWorkout'] as List?)
+              ?.map((e) => Exercise.fromJson(e))
+              .toList() ??
+          [],
+      trainerId: json['trainerId'],
+      trainerName: json['trainerName'] ?? 'No Trainer',
+      trainerSpecialty: json['trainerSpecialty'] ?? 'Coach',
+      attendanceStreak: (json['attendanceStreak'] as List?)
+              ?.map((e) => AttendanceDay.fromJson(e))
+              .toList() ??
+          [],
+      steps: json['steps'] ?? 0,
+      stepGoal: json['stepGoal'] ?? 10000,
+    );
+  }
+}
+
+class Exercise {
+  final String name;
+  final String sets;
+  final String icon;
+
+  Exercise({required this.name, required this.sets, required this.icon});
+
+  factory Exercise.fromJson(Map<String, dynamic> json) {
+    return Exercise(
+      name: json['name'] ?? '',
+      sets: json['sets'] ?? '',
+      icon: json['icon'] ?? 'fitness_center',
+    );
+  }
+}
+
+class AttendanceDay {
+  final String day;
+  final bool present;
+
+  AttendanceDay({required this.day, required this.present});
+
+  factory AttendanceDay.fromJson(Map<String, dynamic> json) {
+    return AttendanceDay(
+      day: json['day'] ?? '',
+      present: json['present'] ?? false,
+    );
+  }
+}
+
 class RecentActivity {
   final String title;
   final String subtitle;
@@ -104,5 +184,22 @@ final recentActivityProvider = FutureProvider<List<RecentActivity>>((ref) async 
     return data.map((e) => RecentActivity.fromJson(e)).toList();
   } else {
     return [];
+  }
+});
+
+final clientStatsProvider = FutureProvider<ClientStats>((ref) async {
+  final dio = ref.read(dioClientProvider);
+  final authService = ref.read(authServiceProvider);
+  final token = await authService.getToken();
+
+  final response = await dio.get(
+    '/api/dashboard/client/stats',
+    options: Options(headers: {'Authorization': 'Bearer $token'}),
+  );
+
+  if (response.statusCode == 200) {
+    return ClientStats.fromJson(response.data['data']);
+  } else {
+    throw Exception('Failed to load member stats');
   }
 });

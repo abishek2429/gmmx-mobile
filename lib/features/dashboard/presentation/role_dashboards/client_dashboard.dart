@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../services/session_service.dart';
 import '../../../auth/presentation/auth_controller.dart';
+import '../dashboard_controller.dart';
 
 class ClientDashboard extends ConsumerWidget {
   const ClientDashboard({super.key});
@@ -18,6 +19,8 @@ class ClientDashboard extends ConsumerWidget {
     final prefs = ref.watch(sharedPreferencesProvider);
     final session = SessionService(prefs);
     final user = session.getLoggedInUser();
+
+    final statsAsync = ref.watch(clientStatsProvider);
 
     return Scaffold(
       body: Container(
@@ -31,39 +34,43 @@ class ClientDashboard extends ConsumerWidget {
               ),
             ),
             SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  // TODO: Refresh client data
-                },
-                color: AppColors.primary,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildHeader(context, ref, isDark, user?.fullName ?? 'Client'),
-                      
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 24),
-                            _buildMembershipCard(context, isDark, user),
-                            const SizedBox(height: 32),
-                            _buildTodayWorkout(isDark),
-                            const SizedBox(height: 32),
-                            _buildTrainerInfo(isDark),
-                            const SizedBox(height: 32),
-                            _buildAttendanceHistory(isDark),
-                            const SizedBox(height: 32),
-                            _buildProgressSection(isDark),
-                            const SizedBox(height: 100), // Bottom padding
-                          ],
+              child: statsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+                data: (stats) => RefreshIndicator(
+                  onRefresh: () => ref.refresh(clientStatsProvider.future),
+                  color: AppColors.primary,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildHeader(context, ref, isDark, user?.fullName ?? 'Client'),
+                        
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 24),
+                              _buildMembershipCard(context, isDark, user, stats),
+                              const SizedBox(height: 32),
+                              _buildStepsSection(isDark, stats),
+                              const SizedBox(height: 32),
+                              _buildTodayWorkout(isDark, stats),
+                              const SizedBox(height: 32),
+                              _buildTrainerInfo(isDark, stats),
+                              const SizedBox(height: 32),
+                              _buildAttendanceHistory(isDark, stats),
+                              const SizedBox(height: 32),
+                              _buildProgressSection(isDark),
+                              const SizedBox(height: 100), // Bottom padding
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -137,7 +144,41 @@ class ClientDashboard extends ConsumerWidget {
               ],
             ),
           ),
-          // Action Button
+          // Notification Button
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No new notifications')),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: AppTheme.glassButton(isDark: isDark),
+              child: Stack(
+                children: [
+                  Icon(
+                    Icons.notifications_rounded,
+                    size: 20,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Theme Toggle
           GestureDetector(
             onTap: () => ref.read(themeModeProvider.notifier).toggle(),
             child: Container(
@@ -155,7 +196,95 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildMembershipCard(BuildContext context, bool isDark, dynamic user) {
+  Widget _buildStepsSection(bool isDark, ClientStats stats) {
+    final progress = (stats.steps / stats.stepGoal).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Health Tracking',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: AppTheme.cardDecoration(isDark: isDark, radius: 28).copyWith(
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 70,
+                    height: 70,
+                    child: CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 8,
+                      backgroundColor: isDark ? AppColors.secondaryBgDark : AppColors.surfaceElevatedLight,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ),
+                  Icon(Icons.directions_walk_rounded, color: AppColors.primary, size: 24),
+                ],
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${stats.steps}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    Text(
+                      'of ${stats.stepGoal} steps',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${(progress * 100).toInt()}%',
+                  style: const TextStyle(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMembershipCard(BuildContext context, bool isDark, dynamic user, ClientStats stats) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
@@ -202,9 +331,9 @@ class ClientDashboard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Expires on Dec 31, 2026',
-                      style: TextStyle(
+                    Text(
+                      'Expires on ${stats.expiryDate}',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
@@ -214,9 +343,9 @@ class ClientDashboard extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        _membershipStat('12', 'Visits'),
+                        _membershipStat('${stats.totalVisits}', 'Visits'),
                         const SizedBox(width: 20),
-                        _membershipStat('420', 'Calories'),
+                        _membershipStat('${stats.calories}', 'Calories'),
                       ],
                     ),
                   ],
@@ -359,12 +488,8 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildTodayWorkout(bool isDark) {
-    final exercises = [
-      _Exercise('Bench Press', '4×12', Icons.fitness_center_rounded),
-      _Exercise('Incline Dumbbell', '3×15', Icons.fitness_center_rounded),
-      _Exercise('Tricep Pushdown', '4×15', Icons.fitness_center_rounded),
-    ];
+  Widget _buildTodayWorkout(bool isDark, ClientStats stats) {
+    final exercises = stats.todayWorkout;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,7 +578,7 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildTrainerInfo(bool isDark) {
+  Widget _buildTrainerInfo(bool isDark, ClientStats stats) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -491,7 +616,7 @@ class ClientDashboard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Sarah Trainer',
+                      stats.trainerName,
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -500,7 +625,7 @@ class ClientDashboard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Personal Coach • 5 yrs exp',
+                      stats.trainerSpecialty,
                       style: TextStyle(
                         fontSize: 13,
                         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
@@ -510,13 +635,26 @@ class ClientDashboard extends ConsumerWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
+              GestureDetector(
+                onTap: () {
+                  if (stats.trainerId != null) {
+                    final gymState = ref.read(gymProvider);
+                    final slug = gymState.value?.subdomain ?? 'dashboard';
+                    context.push('/$slug/messages/${stats.trainerId}?name=${stats.trainerName}');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No trainer assigned to chat with')),
+                    );
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.chat_bubble_rounded, color: AppColors.primary, size: 20),
                 ),
-                child: const Icon(Icons.chat_bubble_rounded, color: AppColors.primary, size: 20),
               ),
             ],
           ),
@@ -525,14 +663,8 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildAttendanceHistory(bool isDark) {
-    final attendance = [
-      _AttendanceDay('Mon', true),
-      _AttendanceDay('Tue', true),
-      _AttendanceDay('Wed', false),
-      _AttendanceDay('Thu', true),
-      _AttendanceDay('Fri', true),
-    ];
+  Widget _buildAttendanceHistory(bool isDark, ClientStats stats) {
+    final attendance = stats.attendanceStreak;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
