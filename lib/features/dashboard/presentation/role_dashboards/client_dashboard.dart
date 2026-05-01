@@ -786,5 +786,3 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 }
-
-}
