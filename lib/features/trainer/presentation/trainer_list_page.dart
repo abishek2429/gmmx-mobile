@@ -115,6 +115,17 @@ class TrainerListPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              IconButton(
+                padding: EdgeInsets.zero,
+                alignment: Alignment.centerLeft,
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                  size: 20,
+                ),
+                onPressed: () => context.pop(),
+              ),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
