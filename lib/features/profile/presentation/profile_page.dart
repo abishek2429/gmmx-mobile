@@ -10,7 +10,7 @@ import 'package:gmmx_mobile/services/session_service.dart';
 import 'package:gmmx_mobile/features/auth/presentation/auth_controller.dart';
 import 'package:gmmx_mobile/features/auth/providers/gym_provider.dart';
 
-import '../../core/widgets/upgrade_popup.dart';
+import '../../../core/widgets/upgrade_popup.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
