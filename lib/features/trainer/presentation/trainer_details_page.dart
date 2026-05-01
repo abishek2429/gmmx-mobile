@@ -47,27 +47,40 @@ class _TrainerDetailsPageState extends ConsumerState<TrainerDetailsPage> {
   }
 
   Future<void> _savePermissions() async {
+    if (widget.trainer.id.isEmpty) {
+      setState(() { _permissionsError = 'Invalid trainer ID. Please refresh and try again.'; });
+      return;
+    }
+
     setState(() { _isSavingPermissions = true; _permissionsError = null; });
     try {
       final dio = ref.read(dioClientProvider);
       final authService = ref.read(authServiceProvider);
       final token = await authService.getToken();
 
-      await dio.put(
+      final response = await dio.put(
         '/api/trainers/${widget.trainer.id}/permissions',
         data: {'permissions': _activePermissions.toList()},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
-      ref.invalidate(trainerListProvider);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permissions updated successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+      if (response.data['success'] == true) {
+        ref.invalidate(trainerListProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permissions updated successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } else {
+        setState(() { _permissionsError = response.data['message'] ?? 'Failed to update permissions'; });
       }
+    } on DioException catch (e) {
+      setState(() { 
+        _permissionsError = e.response?.data['message'] ?? e.message ?? 'Unknown error occurred'; 
+      });
     } catch (e) {
       setState(() { _permissionsError = e.toString(); });
     } finally {
