@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/widgets/upgrade_popup.dart';
 import 'dart:io';
 import '../dashboard_controller.dart';
 
@@ -649,7 +649,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
     required bool isDark,
   }) {
     return GestureDetector(
-      onTap: () => launchUrl(Uri.parse('https://gmmx.app/signup')),
+      onTap: () => UpgradePopup.show(context, requiredPlan: requiredPlan),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: AppTheme.cardDecoration(isDark: isDark, radius: 24).copyWith(
@@ -955,16 +955,7 @@ class _OwnerDashboardState extends ConsumerState<OwnerDashboard>
   }
 
   Future<void> _launchWebUpgrade() async {
-    final uri = Uri.parse('https://gmmx.app/signup');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please visit gmmx.app/signup to upgrade your plan')),
-        );
-      }
-    }
+    UpgradePopup.show(context);
   }
 }
 

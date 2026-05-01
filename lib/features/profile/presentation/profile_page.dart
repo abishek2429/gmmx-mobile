@@ -10,7 +10,7 @@ import 'package:gmmx_mobile/services/session_service.dart';
 import 'package:gmmx_mobile/features/auth/presentation/auth_controller.dart';
 import 'package:gmmx_mobile/features/auth/providers/gym_provider.dart';
 
-import 'package:url_launcher/url_launcher.dart';
+import '../../core/widgets/upgrade_popup.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -361,12 +361,7 @@ class _PlanStatusCard extends ConsumerWidget {
           ),
           if (plan != GymPlan.pro)
             GestureDetector(
-              onTap: () async {
-                final uri = Uri.parse('https://gmmx.app/signup');
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
+              onTap: () => UpgradePopup.show(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
