@@ -12,6 +12,10 @@ class GymInfo {
   final String? logoUrl;
   final String? address;
   final String? contactPhone;
+  final String? attendanceMode;
+  final double? latitude;
+  final double? longitude;
+  final double? attendanceRadius;
 
   GymInfo({
     required this.id,
@@ -21,6 +25,10 @@ class GymInfo {
     this.logoUrl,
     this.address,
     this.contactPhone,
+    this.attendanceMode,
+    this.latitude,
+    this.longitude,
+    this.attendanceRadius,
   });
 
   factory GymInfo.fromJson(Map<String, dynamic> json) {
@@ -32,6 +40,10 @@ class GymInfo {
       logoUrl: json['logoUrl'],
       address: json['address'],
       contactPhone: json['contactPhone'],
+      attendanceMode: json['attendanceMode'],
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      attendanceRadius: (json['attendanceRadius'] as num?)?.toDouble(),
     );
   }
 }

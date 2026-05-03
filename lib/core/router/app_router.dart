@@ -42,6 +42,7 @@ import '../../features/leads/presentation/screens/lead_list_screen.dart';
 import '../../features/leads/presentation/screens/lead_creation_screen.dart';
 import '../../features/gym/presentation/expense_list_page.dart';
 import '../../features/dashboard/presentation/screens/reports_screen.dart';
+import '../../features/attendance/presentation/smart_check_in_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _ownerHomeKey = GlobalKey<NavigatorState>(debugLabel: 'ownerHome');
@@ -477,6 +478,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/:slug/owner/reports',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: '/check-in',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SmartCheckInPage(),
       ),
     ],
   );

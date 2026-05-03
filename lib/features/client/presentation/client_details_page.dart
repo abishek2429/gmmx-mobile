@@ -130,52 +130,90 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
   Widget _buildProfileHeader(Client client, bool isDark) {
     return Column(
       children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.2),
+                  width: 2,
+                ),
               ),
-            ],
-          ),
-          child: const Icon(Icons.person_rounded, size: 48, color: Colors.white),
+            ),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(35),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  client.name[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: client.isActive ? AppColors.success : AppColors.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: isDark ? const Color(0xFF0F172A) : Colors.white, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (client.isActive ? AppColors.success : AppColors.error).withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         Text(
           client.name,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: isDark ? Colors.white : AppColors.textPrimary,
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: client.isActive 
-                ? AppColors.success.withValues(alpha: 0.1) 
-                : AppColors.error.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            client.isActive ? 'ACTIVE' : 'INACTIVE',
-            style: TextStyle(
-              color: client.isActive ? AppColors.success : AppColors.error,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
+        const SizedBox(height: 4),
+        Text(
+          client.membershipPlan.toUpperCase(),
+          style: TextStyle(
+            color: isDark ? Colors.white38 : Colors.black38,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
           ),
         ),
       ],
@@ -194,24 +232,46 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
 
   Widget _statCard(String label, String value, IconData icon, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.cardDecoration(isDark: isDark, radius: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          width: 1,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(height: 16),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 18),
+          ),
+          const SizedBox(height: 20),
           Text(
             value,
             style: TextStyle(
               color: isDark ? Colors.white : AppColors.textPrimary,
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+            ),
           ),
         ],
       ),
@@ -234,17 +294,48 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
   Widget _contactTile(IconData icon, String label, String value, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration(isDark: isDark, radius: 20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          width: 1,
+        ),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary.withValues(alpha: 0.5), size: 20),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 18),
+          ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w700)),
-              Text(value, style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w600)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isDark ? Colors.white38 : Colors.black38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -255,36 +346,60 @@ class _ClientDetailsPageState extends ConsumerState<ClientDetailsPage> {
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
+          child: GestureDetector(
+            onTap: () {
               final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
               context.push('/$slug/messages/${client.id}?name=${Uri.encodeComponent(client.name)}');
             },
-            icon: const Icon(Icons.chat_bubble_rounded, size: 18),
-            label: const Text('MESSAGE', style: TextStyle(fontWeight: FontWeight.w900)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'MESSAGE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
-              context.push('/$slug/owner/members/edit', extra: client);
-            },
-            icon: const Icon(Icons.edit_rounded, size: 18),
-            label: const Text('EDIT', style: TextStyle(fontWeight: FontWeight.w900)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        GestureDetector(
+          onTap: () {
+            final slug = ref.read(gymProvider).value?.subdomain ?? 'dashboard';
+            context.push('/$slug/owner/members/edit', extra: client);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                width: 1,
+              ),
             ),
+            child: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
           ),
         ),
       ],

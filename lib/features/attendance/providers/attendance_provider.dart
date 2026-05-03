@@ -11,11 +11,22 @@ class AttendanceActionNotifier {
   final Dio _dio;
   AttendanceActionNotifier(this._dio);
 
-  Future<void> markAttendance(String memberId) async {
+  Future<void> markAttendance({
+    required String memberId,
+    String method = 'MANUAL',
+    double? latitude,
+    double? longitude,
+    String? qrToken,
+    bool isSelfScan = false,
+  }) async {
     try {
-      await _dio.post('/api/attendance/mark', data: {
+      final endpoint = isSelfScan ? '/api/attendance/scan' : '/api/attendance/mark';
+      await _dio.post(endpoint, data: {
         'memberId': memberId,
-        'method': 'MANUAL',
+        'method': method,
+        'latitude': latitude,
+        'longitude': longitude,
+        'qrToken': qrToken,
       });
     } catch (e) {
       rethrow;

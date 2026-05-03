@@ -1,12 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../services/session_service.dart';
-import '../auth_controller.dart';
-import '../../../auth/providers/gym_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -15,170 +12,189 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  static const _splashDuration = Duration(seconds: 3);
+  static const _pulseDuration = Duration(milliseconds: 800);
+  static const _logoAsset = 'assets/images/logo-trans.png';
+  
+  double _scale = 1.0;
+  bool _showText = false;
+  Timer? _pulseTimer;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
-      ),
-    );
-
-    _controller.forward();
-    _checkAuth();
+    _startAnimations();
+    _navigateToNext();
   }
 
-  Future<void> _checkAuth() async {
-    // Wait for animation to show for at least 2.5 seconds
-    await Future.delayed(const Duration(milliseconds: 2500));
-    
+  void _startAnimations() {
+    // Initial delay for tagline fade-in
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) setState(() => _showText = true);
+    });
+
+    // Start pulse animation
+    _pulseTimer = Timer.periodic(_pulseDuration, (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (_scale == 1.0) {
+          _scale = 0.9;
+        } else if (_scale == 0.9) {
+          _scale = 0.95;
+        } else {
+          _scale = 1.0;
+        }
+      });
+    });
+  }
+
+  Future<void> _navigateToNext() async {
+    await Future.delayed(_splashDuration);
     if (!mounted) return;
 
     final sessionService = ref.read(sessionServiceProvider);
     final user = sessionService.getLoggedInUser();
-    
+
     if (user != null) {
-      // User is logged in, try to load their gym
       final gymSlug = sessionService.getStoredGymSlug();
       if (gymSlug != null) {
-        try {
-          await ref.read(gymProvider.notifier).lookupGym(gymSlug);
-          if (mounted) {
-            context.go('/$gymSlug/${user.normalizedRole}');
-            return;
-          }
-        } catch (e) {
-          // Fallback to login if gym lookup fails
-        }
+        context.go('/$gymSlug/${user.normalizedRole}');
+        return;
       }
       context.go('/login');
     } else {
-      context.go('/');
+      context.go('/welcome');
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _pulseTimer?.cancel();
     super.dispose();
+  }
+
+  String _getTagline(String? role) {
+    if (role == null) return "Train Smart. Track Better.";
+    final r = role.toLowerCase().replaceAll('role_', '');
+    if (r == 'owner') return "Managing your gym...";
+    if (r == 'member' || r == 'client') return "Getting your workout ready...";
+    return "Train Smart. Track Better.";
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final user = ref.watch(sessionServiceProvider).getLoggedInUser();
+    final tagline = _getTagline(user?.role);
 
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: AppTheme.pageBackground(isDark: isDark),
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFEEF2), // Very light pink
+              Color(0xFFFFF8FA), // Near white
+              AppColors.primary,  // #FF5C73
+            ],
+            stops: [0.0, 0.4, 1.0],
+          ),
+        ),
         child: Stack(
+          alignment: Alignment.center,
           children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: AppTheme.foregroundGlow(isDark: isDark),
-              ),
-            ),
-            Center(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            height: 120,
-                            width: 120,
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                              borderRadius: BorderRadius.circular(32),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.2),
-                                  blurRadius: 40,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: Image.asset(
-                              'assets/images/logo-trans.png',
-                              errorBuilder: (context, _, __) => const Icon(
-                                Icons.fitness_center_rounded,
-                                size: 60,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [AppColors.primary, Color(0xFF8E2DE2)],
-                            ).createShader(bounds),
-                            child: const Text(
-                              'GMMX',
-                              style: TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 4,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'GYM MANAGEMENT EVOLVED',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white54 : Colors.black54,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ],
-                      ),
+            // Subtle glow behind logo
+            AnimatedScale(
+              scale: _scale * 1.2,
+              duration: _pulseDuration,
+              curve: Curves.easeInOut,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.4),
+                      blurRadius: 60,
+                      spreadRadius: 10,
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
-            Positioned(
-              bottom: 50,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary.withOpacity(0.5),
+            
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Pulsing Logo
+                AnimatedScale(
+                  scale: _scale,
+                  duration: _pulseDuration,
+                  curve: Curves.easeInOut,
+                  child: Container(
+                    height: 140,
+                    width: 140,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      _logoAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, _, __) => const Icon(
+                        Icons.fitness_center_rounded,
+                        size: 60,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
+                
+                const SizedBox(height: 40),
+                
+                // App Name
+                const Text(
+                  'GMMX',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1A1A1A),
+                    letterSpacing: -1,
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Tagline Fade-in
+                AnimatedOpacity(
+                  opacity: _showText ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 1000),
+                  child: Text(
+                    tagline,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1A1A1A).withOpacity(0.7),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

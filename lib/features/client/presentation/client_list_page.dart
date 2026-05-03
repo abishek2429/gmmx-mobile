@@ -77,13 +77,29 @@ final clientListProvider = FutureProvider<List<Client>>((ref) async {
   }
 });
 
+final searchQueryProvider = StateProvider<String>((ref) => '');
+
+final filteredClientListProvider = Provider<AsyncValue<List<Client>>>((ref) {
+  final clientsAsync = ref.watch(clientListProvider);
+  final query = ref.watch(searchQueryProvider).toLowerCase();
+
+  return clientsAsync.whenData((clients) {
+    if (query.isEmpty) return clients;
+    return clients.where((c) => 
+      c.name.toLowerCase().contains(query) || 
+      c.email.toLowerCase().contains(query) ||
+      c.mobile.toLowerCase().contains(query)
+    ).toList();
+  });
+});
+
 class ClientListPage extends ConsumerWidget {
   const ClientListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
-    final clientsAsync = ref.watch(clientListProvider);
+    final clientsAsync = ref.watch(filteredClientListProvider);
     final gym = ref.watch(gymProvider).value;
     final slug = gym?.subdomain ?? 'dashboard';
 
@@ -139,112 +155,98 @@ class ClientListPage extends ConsumerWidget {
       children: [
         // Header
         Padding(
-          padding: EdgeInsets.all(isMobile ? 20 : 32),
+          padding: EdgeInsets.fromLTRB(isMobile ? 20 : 32, isMobile ? 20 : 32, isMobile ? 20 : 32, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                padding: EdgeInsets.zero,
-                alignment: Alignment.centerLeft,
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                  size: 20,
-                ),
-                onPressed: () => context.pop(),
-              ),
-              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Members',
-                        style: TextStyle(
-                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                          fontSize: isMobile ? 28 : 32,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.centerLeft,
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: AppTheme.glassButton(isDark: isDark),
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: isDark ? Colors.white70 : AppColors.textPrimary,
+                        size: 16,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Manage gym members',
-                        style: TextStyle(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                    ),
+                    onPressed: () => context.pop(),
                   ),
-                  Row(
-                    children: [
-                      if (!isMobile)
-                        FButton(
-                          onPress: () => context.push('/$slug/owner/members/add'),
-                          prefix: const Icon(Icons.add_rounded),
-                          child: const Text('Add New Member'),
-                        ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: AppTheme.glassButton(isDark: isDark),
-                          child: const Icon(
-                            Icons.filter_list_rounded,
-                            color: AppColors.primary,
-                            size: 22,
-                          ),
-                        ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: AppTheme.glassButton(isDark: isDark),
+                      child: const Icon(
+                        Icons.filter_list_rounded,
+                        color: AppColors.primary,
+                        size: 20,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search members...',
-                  hintStyle: TextStyle(
-                    color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: isDark ? AppColors.textHintDark : AppColors.textHint,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppColors.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
+              const SizedBox(height: 24),
+              Text(
+                'Members',
                 style: TextStyle(
                   color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                  fontSize: isMobile ? 32 : 40,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
+              ),
+              Text(
+                'Manage your gym community',
+                style: TextStyle(
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  onChanged: (val) => ref.read(searchQueryProvider.notifier).state = val,
+                  decoration: InputDecoration(
+                    hintText: 'Search members...',
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.black38,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -258,33 +260,35 @@ class ClientListPage extends ConsumerWidget {
               children: [
                 // Stats Row
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: Row(
                     children: [
                       Expanded(
                         child: _StatCard(
-                          label: 'Total',
+                          label: 'TOTAL',
                           value: clients.length.toString(),
-                          icon: Icons.people_outline_rounded,
+                          icon: Icons.people_rounded,
                           isDark: isDark,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: _StatCard(
-                          label: 'Active',
+                          label: 'ACTIVE',
                           value: clients.where((c) => c.isActive).length.toString(),
-                          icon: Icons.check_circle_outline_rounded,
+                          icon: Icons.bolt_rounded,
                           isDark: isDark,
+                          accentColor: AppColors.success,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: _StatCard(
-                          label: 'Avg Attn',
+                          label: 'ATTND',
                           value: clients.isEmpty ? "0" : (clients.fold<int>(0, (sum, c) => sum + c.attendanceCount) / clients.length).toStringAsFixed(0),
-                          icon: Icons.analytics_outlined,
+                          icon: Icons.trending_up_rounded,
                           isDark: isDark,
+                          accentColor: const Color(0xFF8B5CF6),
                         ),
                       ),
                     ],
@@ -299,33 +303,50 @@ class ClientListPage extends ConsumerWidget {
                       ? Center(
                           child: SingleChildScrollView(
                             child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(32),
+                                  padding: const EdgeInsets.all(40),
                                   margin: const EdgeInsets.all(24),
-                                  decoration: AppTheme.cardDecoration(isDark: isDark),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+                                    borderRadius: BorderRadius.circular(32),
+                                    border: Border.all(
+                                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                                    ),
+                                  ),
                                   child: Column(
                                     children: [
-                                      Icon(
-                                        Icons.people_outline_rounded,
-                                        size: 64,
-                                        color: isDark ? AppColors.textHintDark : AppColors.textHint,
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.people_outline_rounded,
+                                          size: 40,
+                                          color: AppColors.primary,
+                                        ),
                                       ),
-                                      const SizedBox(height: 20),
+                                      const SizedBox(height: 24),
                                       Text(
-                                        'No members yet',
+                                        ref.watch(searchQueryProvider).isEmpty ? 'No members yet' : 'No results found',
                                         style: TextStyle(
-                                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                          color: isDark ? Colors.white : AppColors.textPrimary,
                                           fontSize: 20,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Add your first member to get started',
+                                        ref.watch(searchQueryProvider).isEmpty 
+                                         ? 'Add your first member to get started'
+                                         : 'Try searching with a different name',
                                         style: TextStyle(
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                                          color: isDark ? Colors.white38 : Colors.black38,
                                           fontSize: 14,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
@@ -396,47 +417,60 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.isDark,
+    this.accentColor,
   });
 
   final String label;
   final String value;
   final IconData icon;
   final bool isDark;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: AppTheme.cardDecoration(isDark: isDark, radius: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          width: 1,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Icon(
-                icon,
-                color: AppColors.primary,
-                size: 14,
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: (accentColor ?? AppColors.primary).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: accentColor ?? AppColors.primary,
+              size: 14,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             value,
             style: TextStyle(
-              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-              fontSize: 20,
+              color: isDark ? Colors.white : AppColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 9,
               fontWeight: FontWeight.w800,
+              letterSpacing: 1,
             ),
           ),
         ],
@@ -463,14 +497,53 @@ class ClientCard extends ConsumerWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: AppTheme.cardDecoration(isDark: isDark, radius: 20),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Avatar with Initial
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primary.withOpacity(0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Center(
+                    child: Text(
+                      client.name[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,23 +551,37 @@ class ClientCard extends ConsumerWidget {
                       Text(
                         client.name,
                         style: TextStyle(
-                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.fitness_center_rounded, size: 12, color: AppColors.primary),
-                          const SizedBox(width: 4),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: client.isActive ? AppColors.success : AppColors.error,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (client.isActive ? AppColors.success : AppColors.error).withOpacity(0.5),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            client.assignedTrainer,
+                            client.membershipPlan,
                             style: TextStyle(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                              color: isDark ? Colors.white38 : Colors.black38,
                               fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -502,39 +589,8 @@ class ClientCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    final gym = ref.read(gymProvider).value;
-                    final slug = gym?.subdomain ?? 'dashboard';
-                    context.push('/$slug/messages/${client.id}?name=${Uri.encodeComponent(client.name)}');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.chat_bubble_rounded, color: AppColors.success, size: 20),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: client.isActive ? AppColors.success.withOpacity(0.12) : AppColors.error.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    client.isActive ? 'Active' : 'Inactive',
-                    style: TextStyle(
-                      color: client.isActive ? (isDark ? AppColors.successDark : AppColors.success) : (isDark ? AppColors.errorDark : AppColors.error),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.black54),
+                  icon: Icon(Icons.more_horiz_rounded, color: isDark ? Colors.white54 : Colors.black45),
                   onSelected: (val) => _handleAction(context, ref, val, client),
                   itemBuilder: (context) => [
                     const PopupMenuItem(value: 'edit', child: Text('Edit Member')),
@@ -548,24 +604,40 @@ class ClientCard extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(
-                  child: _MiniStat(
-                    label: 'Attendance',
-                    value: '${client.attendanceCount}',
-                    icon: Icons.event_available_rounded,
-                    isDark: isDark,
-                  ),
+                _MiniStat(
+                  label: 'TRAINER',
+                  value: client.assignedTrainer,
+                  icon: Icons.fitness_center_rounded,
+                  isDark: isDark,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _MiniStat(
-                    label: 'Joined',
-                    value: '${client.joinedAt.day}/${client.joinedAt.month}/${client.joinedAt.year}',
-                    icon: Icons.event_available_rounded,
-                    isDark: isDark,
+                _MiniStat(
+                  label: 'ATTND',
+                  value: '${client.attendanceCount}',
+                  icon: Icons.calendar_today_rounded,
+                  isDark: isDark,
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    final gym = ref.read(gymProvider).value;
+                    final slug = gym?.subdomain ?? 'dashboard';
+                    context.push('/$slug/messages/${client.id}?name=${Uri.encodeComponent(client.name)}');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.chat_bubble_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
                   ),
                 ),
               ],

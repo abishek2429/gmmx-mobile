@@ -42,67 +42,81 @@ class ProfilePage extends ConsumerWidget {
                   child: Column(
                     children: [
                       // Avatar
-                      Container(
-                        width: 90,
-                        height: 90,
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDark ? Colors.white24 : Colors.black12,
-                            width: 2,
-                          ),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
-                              width: 1,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              (user?.fullName.isNotEmpty ?? false)
-                                  ? user!.fullName[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : AppColors.textPrimary,
-                                fontSize: 36,
-                                fontWeight: FontWeight.w900,
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 110,
+                            height: 110,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.1),
+                                width: 1,
                               ),
                             ),
                           ),
-                        ),
+                          Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                                width: 1,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                (user?.fullName.isNotEmpty ?? false)
+                                    ? user!.fullName[0].toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : AppColors.textPrimary,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                             ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       Text(
                         user?.fullName ?? 'User',
                         style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                          letterSpacing: -0.3,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user?.mobile ?? user?.email ?? '',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white38 : Colors.black38,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       // Role badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: _roleColor(role).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
+                          color: _roleColor(role).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: _roleColor(role).withOpacity(0.3),
+                            color: _roleColor(role).withOpacity(0.2),
                             width: 1,
                           ),
                         ),
@@ -117,7 +131,7 @@ class ProfilePage extends ConsumerWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: _roleColor(role),
+                                    color: _roleColor(role).withOpacity(0.5),
                                     blurRadius: 6,
                                     spreadRadius: 1,
                                   ),
@@ -129,9 +143,9 @@ class ProfilePage extends ConsumerWidget {
                               _roleLabel(role),
                               style: TextStyle(
                                 color: _roleColor(role),
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w900,
-                                letterSpacing: 0.8,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ],
