@@ -404,24 +404,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             label: 'Check In',
             icon: Icons.qr_code_2_rounded,
             isDark: isDark,
-            onPressed: () {
-              Navigator.of(context).push(
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const QrAttendancePage(),
-                  transitionsBuilder: (_, animation, __, child) =>
-                      SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(1, 0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    )),
-                    child: child,
-                  ),
-                ),
-              );
-            },
+            onPressed: () => context.push('/check-in'),
           ),
         ),
         const SizedBox(width: 8),
@@ -430,24 +413,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             label: 'Attendance',
             icon: Icons.history_rounded,
             isDark: isDark,
-            onPressed: () {
-              Navigator.of(context).push(
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const QrAttendancePage(),
-                  transitionsBuilder: (_, animation, __, child) =>
-                      SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(1, 0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    )),
-                    child: child,
-                  ),
-                ),
-              );
-            },
+            onPressed: () => context.push('/client/history'),
           ),
         ),
       ],

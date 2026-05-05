@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../../services/health_service.dart';
 
 class DailyRevenue {
   final String day;
@@ -61,6 +62,9 @@ class ClientStats {
   final List<AttendanceDay> attendanceStreak;
   final int steps;
   final int stepGoal;
+  final bool isCheckedIn;
+  final double? height;
+  final double? weight;
 
   ClientStats({
     required this.planName,
@@ -74,6 +78,9 @@ class ClientStats {
     required this.attendanceStreak,
     required this.steps,
     required this.stepGoal,
+    required this.isCheckedIn,
+    this.height,
+    this.weight,
   });
 
   factory ClientStats.fromJson(Map<String, dynamic> json) {
@@ -95,6 +102,9 @@ class ClientStats {
           [],
       steps: json['steps'] ?? 0,
       stepGoal: json['stepGoal'] ?? 10000,
+      isCheckedIn: json['isCheckedIn'] ?? false,
+      height: (json['height'] as num?)?.toDouble(),
+      weight: (json['weight'] as num?)?.toDouble(),
     );
   }
 }
@@ -190,6 +200,7 @@ final recentActivityProvider = FutureProvider<List<RecentActivity>>((ref) async 
 final clientStatsProvider = FutureProvider<ClientStats>((ref) async {
   final dio = ref.read(dioClientProvider);
   final authService = ref.read(authServiceProvider);
+  final healthService = ref.read(healthServiceProvider);
   final token = await authService.getToken();
 
   final response = await dio.get(
@@ -198,7 +209,34 @@ final clientStatsProvider = FutureProvider<ClientStats>((ref) async {
   );
 
   if (response.statusCode == 200) {
-    return ClientStats.fromJson(response.data['data']);
+    var stats = ClientStats.fromJson(response.data['data']);
+    
+    // Fetch real health data if possible
+    try {
+      final steps = await healthService.getStepsToday();
+      final calories = await healthService.getCaloriesToday();
+      
+      if (steps > 0) {
+        stats = ClientStats(
+          planName: stats.planName,
+          expiryDate: stats.expiryDate,
+          totalVisits: stats.totalVisits,
+          calories: calories > 0 ? calories.toInt() : stats.calories,
+          todayWorkout: stats.todayWorkout,
+          trainerId: stats.trainerId,
+          trainerName: stats.trainerName,
+          trainerSpecialty: stats.trainerSpecialty,
+          attendanceStreak: stats.attendanceStreak,
+          steps: steps,
+          stepGoal: stats.stepGoal,
+          isCheckedIn: stats.isCheckedIn,
+        );
+      }
+    } catch (_) {
+      // Health data failed, use API stats
+    }
+    
+    return stats;
   } else {
     throw Exception('Failed to load member stats');
   }

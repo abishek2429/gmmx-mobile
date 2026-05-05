@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../../services/health_service.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -55,11 +56,11 @@ class ClientDashboard extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 24),
-                              _buildCheckInAction(context, isDark),
+                              _buildCheckInAction(context, ref, isDark, stats),
                               const SizedBox(height: 24),
                               _buildMembershipCard(context, isDark, user, stats),
                               const SizedBox(height: 32),
-                              _buildStepsSection(isDark, stats),
+                              _buildStepsSection(context, ref, isDark, stats),
                               const SizedBox(height: 32),
                               _buildTodayWorkout(isDark, stats),
                               const SizedBox(height: 32),
@@ -199,21 +200,27 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildCheckInAction(BuildContext context, bool isDark) {
+  Widget _buildCheckInAction(BuildContext context, WidgetRef ref, bool isDark, ClientStats stats) {
+    final isCheckedIn = stats.isCheckedIn;
+    
     return GestureDetector(
-      onTap: () => context.push('/check-in'),
+      onTap: () async {
+        await context.push('/check-in');
+        // Refresh stats when coming back
+        ref.refresh(clientStatsProvider.future);
+      },
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E2D) : Colors.white,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: AppColors.primary.withOpacity(0.2),
+            color: (isCheckedIn ? AppColors.success : AppColors.primary).withOpacity(0.2),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.1),
+              color: (isCheckedIn ? AppColors.success : AppColors.primary).withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -224,12 +231,12 @@ class ClientDashboard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: (isCheckedIn ? AppColors.success : AppColors.primary).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                color: AppColors.primary,
+              child: Icon(
+                isCheckedIn ? Icons.logout_rounded : Icons.qr_code_scanner_rounded,
+                color: isCheckedIn ? AppColors.success : AppColors.primary,
                 size: 32,
               ),
             ),
@@ -239,7 +246,7 @@ class ClientDashboard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ready to workout?',
+                    isCheckedIn ? 'Session Active' : 'Ready to workout?',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -248,7 +255,7 @@ class ClientDashboard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Check in to start your session',
+                    isCheckedIn ? 'Check out when you are done' : 'Check in to start your session',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -269,18 +276,40 @@ class ClientDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildStepsSection(bool isDark, ClientStats stats) {
+  Widget _buildStepsSection(BuildContext context, WidgetRef ref, bool isDark, ClientStats stats) {
     final progress = (stats.steps / stats.stepGoal).clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Health Tracking',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Health Tracking',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                final success = await ref.read(healthServiceProvider).authorize();
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Google Fit Connected!')),
+                  );
+                  ref.refresh(clientStatsProvider.future);
+                }
+              },
+              icon: const Icon(Icons.link_rounded, size: 16),
+              label: const Text('Connect Fit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         Container(

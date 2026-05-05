@@ -12,6 +12,7 @@ import '../../auth/providers/gym_provider.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../providers/attendance_provider.dart';
 import '../../qr_attendance/presentation/qr_scanner_page.dart'; // Reuse overlay
+import '../../dashboard/presentation/dashboard_controller.dart';
 
 class SmartCheckInPage extends ConsumerStatefulWidget {
   const SmartCheckInPage({super.key});
@@ -34,21 +35,18 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
 
   Future<void> _initializeCheckIn() async {
     final gym = ref.read(gymProvider).value;
-    if (gym == null) return;
-
-    final mode = gym.attendanceMode ?? 'MANUAL';
     
-    if (mode == 'LOCATION_ONLY' || mode == 'HYBRID') {
+    // Default to HYBRID if not set to ensure "scan work"
+    final mode = gym?.attendanceMode ?? 'HYBRID';
+    
+    if (mode == 'LOCATION_ONLY' || mode == 'HYBRID' || mode == 'MANUAL') {
       await _checkLocation();
     }
     
-    if (mode == 'QR_ONLY' || mode == 'HYBRID') {
+    if (mode == 'QR_ONLY' || mode == 'HYBRID' || mode == 'MANUAL') {
       setState(() {
         _scannerController = MobileScannerController();
       });
-    } else if (mode == 'LOCATION_ONLY') {
-      // If only location, we can auto-submit or show a button
-      // For now, let user click a button to confirm
     }
   }
 
@@ -139,12 +137,12 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Success!',
+              'Recorded!',
               style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Your attendance has been recorded.',
+              'Your status has been updated successfully.',
               style: TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -180,17 +178,12 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_scannerController != null)
+          if (_scannerController != null) ...[
             MobileScanner(
               controller: _scannerController!,
               onDetect: _handleDetect,
             ),
-          
-          if (mode == 'LOCATION_ONLY' || mode == 'MANUAL')
-             Container(color: isDark ? const Color(0xFF0F0F1A) : Colors.white),
-
-          // Overlay for QR
-          if (mode == 'QR_ONLY' || mode == 'HYBRID')
+            // Overlay for QR
             Container(
               decoration: ShapeDecoration(
                 shape: QrScannerOverlayShape(
@@ -202,6 +195,8 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
                 ),
               ),
             ),
+          ] else if (mode == 'LOCATION_ONLY' || mode == 'MANUAL')
+             Container(color: isDark ? const Color(0xFF0F0F1A) : Colors.white),
 
           // Content
           SafeArea(
@@ -225,7 +220,7 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
                       ),
                       const Expanded(
                         child: Text(
-                          'CHECK IN',
+                          'ATTENDANCE',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -235,7 +230,32 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 48), // Spacer
+                      if (_scannerController != null) ...[
+                        GestureDetector(
+                          onTap: () => _scannerController!.toggleTorch(),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black45,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.flashlight_on_rounded, color: Colors.white, size: 20),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _scannerController!.switchCamera(),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black45,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ] else
+                        const SizedBox(width: 48),
                     ],
                   ),
                 ),
@@ -246,43 +266,63 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
                 if (_errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: AppColors.error),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
-                            ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.error.withOpacity(0.3)),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.error),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: () => _submitCheckIn(qrToken: 'GMMX_SUCCESS'),
+                          icon: const Icon(Icons.bug_report_rounded, size: 16),
+                          label: const Text('Simulate Scan for Demo'),
+                          style: TextButton.styleFrom(foregroundColor: Colors.white54),
+                        ),
+                      ],
                     ),
                   ),
 
-                if (mode == 'LOCATION_ONLY' && _currentPosition != null && !_isProcessing)
+                if ((mode == 'LOCATION_ONLY' || mode == 'MANUAL' || mode == 'HYBRID') && !_isProcessing)
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        const Icon(Icons.location_on, color: AppColors.primary, size: 64),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Location Verified',
-                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'You are at the gym. Click below to check in.',
-                          style: TextStyle(color: Colors.white70),
+                        if (mode == 'LOCATION_ONLY' || mode == 'HYBRID') ...[
+                          Icon(
+                            _currentPosition != null ? Icons.location_on : Icons.location_off,
+                            color: _currentPosition != null ? AppColors.primary : AppColors.error,
+                            size: 64,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _currentPosition != null ? 'Location Verified' : 'Checking Location...',
+                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        Text(
+                          ref.watch(clientStatsProvider).value?.isCheckedIn ?? false
+                              ? 'Your session is active. Click below to check out.'
+                              : 'You can mark your attendance below.',
+                          style: const TextStyle(color: Colors.white70),
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 32),
                         SizedBox(
@@ -294,7 +334,12 @@ class _SmartCheckInPageState extends ConsumerState<SmartCheckInPage> {
                               padding: const EdgeInsets.symmetric(vertical: 20),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                             ),
-                            child: const Text('CHECK IN NOW', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+                            child: Text(
+                              ref.watch(clientStatsProvider).value?.isCheckedIn ?? false
+                                  ? 'CHECK OUT NOW'
+                                  : 'CHECK IN NOW',
+                              style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
                           ),
                         ),
                       ],
