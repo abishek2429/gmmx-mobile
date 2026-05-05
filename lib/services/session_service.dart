@@ -13,6 +13,7 @@ final sessionServiceProvider = Provider<SessionService>((ref) {
 class SessionService {
   static const _keyUser = 'gmmx_session_user';
   static const _keyLoggedIn = 'gmmx_logged_in';
+  static const _keyLastUser = 'gmmx_last_user';
 
   final SharedPreferences _prefs;
 
@@ -23,13 +24,29 @@ class SessionService {
 
   /// Save user session
   Future<void> saveSession(UserModel user) async {
-    await _prefs.setString(_keyUser, json.encode(user.toJson()));
+    final userJson = json.encode(user.toJson());
+    await _prefs.setString(_keyUser, userJson);
+    await _prefs.setString(_keyLastUser, userJson);
     await _prefs.setBool(_keyLoggedIn, true);
   }
 
   /// Get the logged-in user
   UserModel? getLoggedInUser() {
+    if (!isLoggedIn) return null;
     final userJson = _prefs.getString(_keyUser);
+    if (userJson == null) return null;
+
+    try {
+      final data = json.decode(userJson) as Map<String, dynamic>;
+      return UserModel.fromJson(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Get the last user who was logged in (even if currently logged out)
+  UserModel? getLastUser() {
+    final userJson = _prefs.getString(_keyLastUser);
     if (userJson == null) return null;
 
     try {
@@ -42,7 +59,8 @@ class SessionService {
 
   /// Clear session (logout)
   Future<void> clearSession() async {
-    await _prefs.remove(_keyUser);
+    // We keep _keyUser and _keyLastUser for "Login as" feature
+    // but set isLoggedIn to false
     await _prefs.setBool(_keyLoggedIn, false);
   }
 

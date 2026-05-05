@@ -607,18 +607,22 @@ class ClientCard extends ConsumerWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                _MiniStat(
-                  label: 'TRAINER',
-                  value: client.assignedTrainer,
-                  icon: Icons.fitness_center_rounded,
-                  isDark: isDark,
+                Expanded(
+                  child: _MiniStat(
+                    label: 'TRAINER',
+                    value: client.assignedTrainer,
+                    icon: Icons.fitness_center_rounded,
+                    isDark: isDark,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                _MiniStat(
-                  label: 'ATTND',
-                  value: '${client.attendanceCount}',
-                  icon: Icons.calendar_today_rounded,
-                  isDark: isDark,
+                Expanded(
+                  child: _MiniStat(
+                    label: 'ATTND',
+                    value: '${client.attendanceCount}',
+                    icon: Icons.calendar_today_rounded,
+                    isDark: isDark,
+                  ),
                 ),
                 const Spacer(),
                 GestureDetector(

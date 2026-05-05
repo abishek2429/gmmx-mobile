@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
+import '../core/config.dart';
 
 class AuthService {
   final Dio _dio;
@@ -49,9 +50,9 @@ class AuthService {
       // On Web, the clientId is mandatory.
       // On Android/iOS, serverClientId is needed to get the idToken for backend exchange.
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: '569266698773-uo2106moohqafqn6o5of5a150nqocpl3.apps.googleusercontent.com',
-        serverClientId: '569266698773-uo2106moohqafqn6o5of5a150nqocpl3.apps.googleusercontent.com',
-        scopes: ['email'],
+        clientId: AppConfig.googleClientId.isNotEmpty ? AppConfig.googleClientId : null,
+        serverClientId: AppConfig.googleServerClientId,
+        scopes: ['email', 'openid'],
       );
       
       final GoogleSignInAccount? account = await googleSignIn.signIn();

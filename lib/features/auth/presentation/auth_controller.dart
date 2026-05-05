@@ -23,6 +23,7 @@ class AuthState {
   final bool isSendingOtp;
   final bool isGoogleVerifying;
   final UserModel? user;
+  final UserModel? lastUser;
   final String? errorMessage;
 
   const AuthState({
@@ -33,6 +34,7 @@ class AuthState {
     this.isSendingOtp = false,
     this.isGoogleVerifying = false,
     this.user,
+    this.lastUser,
     this.errorMessage,
   });
 
@@ -44,6 +46,7 @@ class AuthState {
     bool? isSendingOtp,
     bool? isGoogleVerifying,
     UserModel? user,
+    UserModel? lastUser,
     String? errorMessage,
   }) {
     return AuthState(
@@ -54,6 +57,7 @@ class AuthState {
       isSendingOtp: isSendingOtp ?? this.isSendingOtp,
       isGoogleVerifying: isGoogleVerifying ?? this.isGoogleVerifying,
       user: user ?? this.user,
+      lastUser: lastUser ?? this.lastUser,
       errorMessage: errorMessage,
     );
   }
@@ -79,8 +83,15 @@ class AuthController extends StateNotifier<AuthState> {
 
   void _loadSession() {
     final user = _sessionService.getLoggedInUser();
-    if (user != null) {
-      state = state.copyWith(user: user);
+    final lastUser = _sessionService.getLastUser();
+    state = state.copyWith(user: user, lastUser: lastUser);
+  }
+
+  /// Perform quick login with stored user info
+  Future<void> quickLogin() async {
+    if (state.lastUser != null) {
+      await _sessionService.saveSession(state.lastUser!);
+      state = state.copyWith(user: state.lastUser);
     }
   }
 
@@ -194,12 +205,12 @@ class AuthController extends StateNotifier<AuthState> {
       // Ignore network errors on logout
     } finally {
       await _sessionService.clearSession();
-      // Reset state to initial with null user
-      state = const AuthState();
+      // Clear active user but preserve lastUser for "Login as" prompt
+      state = AuthState(lastUser: _sessionService.getLastUser());
     }
   }
 
-  /// Reset state for new login attempt
+  /// Reset state to clear any prompts and form data
   void reset() {
     state = const AuthState();
   }

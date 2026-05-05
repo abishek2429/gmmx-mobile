@@ -185,6 +185,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               const SizedBox(height: 20),
                             ],
+
+                            // ─── Login As Prompt ───
+                            if (authState.lastUser != null && authState.user == null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(isDark ? 0.1 : 0.05),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'Welcome Back!',
+                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Login as ${authState.lastUser!.fullName}?',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      authState.lastUser!.email ?? authState.lastUser!.phone ?? '',
+                                      style: TextStyle(fontSize: 12, color: isDark ? Colors.grey : Colors.grey[600]),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    FButton(
+                                      onPress: () => ref.read(authControllerProvider.notifier).quickLogin(),
+                                      child: const Text('Yes, continue'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        // Option to use a different account
+                                        ref.read(authControllerProvider.notifier).reset();
+                                      },
+                                      child: const Text('Use a different account', style: TextStyle(fontSize: 12)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              const Row(
+                                children: [
+                                  Expanded(child: Divider()),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 16),
+                                    child: Text('or sign in with', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  ),
+                                  Expanded(child: Divider()),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                            ],
                             
                             // ─── Login Form ───
                             Theme(
